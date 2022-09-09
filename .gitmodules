@@ -1,0 +1,3 @@
+[submodule "sol2"]
+	path = sol2
+	url = ./sol2
