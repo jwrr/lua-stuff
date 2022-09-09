@@ -26,5 +26,16 @@ From root of existing Git repo:
 git submodule add https://github.com/ThePhD/sol2.git ./sol2
 git commit -m "Add sol2 submodule"
 git push
+cd ..
+mv lua-stuff lua-stuff2
+
+git clone lua-stuff
+git submodule update --init --recursive
+
+or 
+
+git clone --recursive lua-stuff
+
 ```
+
 
