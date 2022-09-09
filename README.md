@@ -38,4 +38,11 @@ git clone --recursive lua-stuff
 
 ```
 
+Run Hello
+---------
 
+I'm using Ubuntu 20.04 and needed the following to link without errors
+
+```
+g++ -std=c++17 1_hello.cpp -I"../sol2/include"  -llua -Wl,--no-as-needed -ldl -o 1_hello.exe
+``` 
