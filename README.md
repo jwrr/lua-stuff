@@ -20,6 +20,9 @@ lua hello.lua
 Install Sol2 v3.3
 -----------------
 
+* [github.com/ThePhD/sol2](https://github.com/ThePhD/sol2)
+* [sol2.readthedocs.io](https://sol2.readthedocs.io/en/latest/)
+
 From root of existing Git repo:
 
 ```
@@ -32,7 +35,7 @@ mv lua-stuff lua-stuff2
 git clone lua-stuff
 git submodule update --init --recursive
 
-or 
+or
 
 git clone --recursive lua-stuff
 
@@ -45,4 +48,5 @@ I'm using Ubuntu 20.04 and needed the following to link without errors
 
 ```
 g++ -std=c++17 1_hello.cpp -I"../sol2/include"  -llua -Wl,--no-as-needed -ldl -o 1_hello.exe
-``` 
+```
+
