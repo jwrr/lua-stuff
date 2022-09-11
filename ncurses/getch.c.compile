@@ -1,0 +1,3 @@
+gcc getch.c  -lncurses -o getch.c.exe
+
+ 
