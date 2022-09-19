@@ -1,3 +1,3 @@
 #g++ -std=c++17 test.cpp -I"../sol2/sol/include" -I"path/to/lua/include" -L"path/to/lua/lib" -llua
-g++ -std=c++17 1_hello.cpp -I"../sol2/include"  -llua -Wl,--no-as-needed -ldl -o 1_hello.exe
+g++ -std=c++17 1_hello.cpp -I"../modules/sol2/include"  -llua -Wl,--no-as-needed -ldl -o 1_hello.exe
 

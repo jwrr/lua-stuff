@@ -20,87 +20,11 @@
 -- SOFTWARE.
 
 local curses  = require"curses"
+local textbox = require"textbox"
 local dirtree = require"dirtree"
 
 
-local textbox = {}
-textbox.all_windows = {}
-
-
-function textbox.rainbow(win, str, attr)
-  attr = attr or curses.A_NORMAL
-  win:attron(attr)
-  win:mvaddstr(0, 0, '')
-  for i = 1, #str do
-    -- iterate 1 to 7 (skip 0 which is black / invisible)
-    local attr_tmp = (i % 7) + 1
-    win:attron(attr_tmp)
-    local c = str:sub(i,i)
-    win:addstr(c)
-  end
-
-  win:attroff(attr)
-  win:clrtobot()
-  win:refresh()
-end
-
-
-function textbox.rpad(str, len)
-  return str .. string.rep(" ", len - #str)
-end
-
-
-  function textbox.new(name, height, width, starty, startx, border)
-    local txt_height = height
-    local txt_width  = width
-    local txt_starty = starty
-    local txt_startx = startx
-
-    if border then
-      local box_win = curses.newwin(height, width, starty, startx)
-      textbox.all_windows[name .. "_box"] = {}
-      textbox.all_windows[name .. "_box"].win = box_win
-      textbox.all_windows[name .. "_box"].isbox = true
-      txt_height = height - 2
-      txt_width  = width - 2
-      txt_starty = starty + 1
-      txt_startx = startx + 1
-    end
-    
-    local txt_win = curses.newwin(txt_height, txt_width, txt_starty, txt_startx)
-    textbox.all_windows[name] = {}
-    textbox.all_windows[name].win    = txt_win
-    textbox.all_windows[name].height = height
-    textbox.all_windows[name].width  = width
-    textbox.all_windows[name].starty = starty
-    textbox.all_windows[name].startx = startx
-    textbox.all_windows[name].isbox  = false
-    textbox.all_windows[name].inbox  = border
-  end
-
-
-  function textbox.refresh(name)
-    if textbox.all_windows[name].inbox then
-      local box_name = name .. '_box'
-      textbox.all_windows[box_name].win:box(0, 0)
-      textbox.all_windows[box_name].win:refresh()
-    end
-    textbox.all_windows[name].win:refresh()
-  end
-
-
-  function textbox.print(name, str, attr)
-    attr = attr or curses.A_NORMAL
-    local win = textbox.all_windows[name].win
-    win:attron(attr)
-    win:mvaddstr(0, 0, str)
-    win:attroff(attr)
-    win:clrtobot()
-    textbox.refresh(name)
-  end
-
-
-function textbox.main ()
+function filebrowser()
   local stdscr = curses.initscr()
   stdscr:clear()
   stdscr:refresh()
@@ -193,14 +117,4 @@ function textbox.main ()
   curses.endwin()
 end
 
-
--- To display Lua errors, we must close curses to return to
--- normal terminal mode, and then write the error to stdout.
-function textbox.err(err)
-  curses.endwin()
-  print "Caught an error:"
-  print(debug.traceback(err, 2))
-  os.exit(2)
-end
-
-xpcall(textbox.main, textbox.err)
+xpcall(filebrowser, textbox.err)

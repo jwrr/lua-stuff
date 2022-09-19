@@ -1,2 +1,2 @@
-g++ -std=c++17 2_script.cpp -I"../sol2/include"  -llua -Wl,--no-as-needed -ldl -o 2_script.exe
+g++ -std=c++17 2_script.cpp -I"../modules/sol2/include"  -llua -Wl,--no-as-needed -ldl -o 2_script.exe
 
