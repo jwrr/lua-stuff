@@ -1,4 +1,5 @@
--- Copyright 2022 jwrr.com
+
+-- -- Copyright 2022 jwrr.com
 --
 -- THE MIT LICENSE
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,6 +21,7 @@
 -- SOFTWARE.
 
   local curses  = require"curses"
+  local stringx = require"pl.stringx"
   local dirtree = require"dirtree"
 
 
@@ -36,34 +38,50 @@
     textbox.all_windows[name].win:attron(curses.color_pair(color))
   end
 
+  function textbox.new(cfg)
 
-  function textbox.new(name, height, width, starty, startx, border)
-    local txt_height = height
-    local txt_width  = width
-    local txt_starty = starty
-    local txt_startx = startx
+    cfg.name   = cfg.name or tostring(#textbox.all_windows)
+    cfg.height = cfg.height or 10
+    cfg.width  = cfg.width  or 10
+    cfg.starty = cfg.starty or 10
+    cfg.startx = cfg.startx or 10
+    
+    local name = cfg.name
+    local txt_height = cfg.height
+    local txt_width  = cfg.width
+    local txt_starty = cfg.starty
+    local txt_startx = cfg.startx
 
-    if border then
-      local box_win = curses.newwin(height, width, starty, startx)
+    if cfg.border then
+      local box_win = curses.newwin(cfg.height, cfg.width, cfg.starty, cfg.startx)
       textbox.all_windows[name .. "_box"] = {}
       textbox.all_windows[name .. "_box"].win = box_win
       textbox.all_windows[name .. "_box"].isbox = true
-      txt_height = height - 2
-      txt_width  = width - 2
-      txt_starty = starty + 1
-      txt_startx = startx + 1
+      txt_height = cfg.height - 2
+      txt_width  = cfg.width - 2
+      txt_starty = cfg.starty + 1
+      txt_startx = cfg.startx + 1
     end
 
     local txt_win = curses.newwin(txt_height, txt_width, txt_starty, txt_startx)
     textbox.all_windows[name] = {}
-    textbox.all_windows[name].win    = txt_win
-    textbox.all_windows[name].height = height
-    textbox.all_windows[name].width  = width
-    textbox.all_windows[name].starty = starty
-    textbox.all_windows[name].startx = startx
-    textbox.all_windows[name].isbox  = false
-    textbox.all_windows[name].inbox  = border
+    textbox.all_windows[name].win         = txt_win
+    textbox.all_windows[name].box_height  = cfg.height
+    textbox.all_windows[name].box_width   = cfg.width
+    textbox.all_windows[name].box_starty  = cfg.starty
+    textbox.all_windows[name].box_startx  = cfg.startx
+    textbox.all_windows[name].txt_height  = txt_height
+    textbox.all_windows[name].txt_width   = txt_width
+    textbox.all_windows[name].txt_starty  = txt_starty
+    textbox.all_windows[name].txt_startx  = txt_startx
+    textbox.all_windows[name].isbox       = false
+    textbox.all_windows[name].inbox       = cfg.border
+    textbox.all_windows[name].txt_color   = cfg.txt_color
+    if cfg.txtcolor then
+      textbox.color_pair(name, cfg.txtcolor)
+    end
   end
+
 
 
   function textbox.refresh(name)
@@ -74,6 +92,26 @@
     end
     textbox.all_windows[name].win:refresh()
   end
+
+
+  function textbox.print_tab(name, t, action)
+    attr = attr or curses.A_NORMAL
+    action = action or 'init' -- 'init', 'insert'
+    local txt_width = textbox.all_windows[name].txt_width - 1
+    
+    local s = ""
+    for _,v in ipairs(t) do
+      local line = stringx.shorten(v, txt_width)
+      line = textbox.rpad(line, txt_width)
+      s = s .. line .. "\n"
+    end
+    
+    local win = textbox.all_windows[name].win
+    win:mvaddstr(0, 0, s)
+    win:clrtobot()
+    textbox.refresh(name)
+  end
+
 
 
   function textbox.print(name, str, attr)
@@ -87,14 +125,15 @@
   end
 
 
--- To display Lua errors, we must close curses to return to
--- normal terminal mode, and then write the error to stdout.
-function textbox.err(err)
-  curses.endwin()
-  print "Caught an error:"
-  print(debug.traceback(err, 2))
-  os.exit(2)
-end
+
+  -- To display Lua errors, we must close curses to return to
+  -- normal terminal mode, and then write the error to stdout.
+  function textbox.err(err)
+    curses.endwin()
+    print "Caught an error:"
+    print(debug.traceback(err, 2))
+    os.exit(2)
+  end
 
 
 return textbox

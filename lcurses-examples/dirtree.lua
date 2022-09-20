@@ -1,9 +1,6 @@
 local dirtree = {}
 
-
   local lfs = require"lfs"
---  local curses = require"lcurses"
-
 
   function dirtree.rpad(str, len)
     return str .. string.rep(" ", len - #str)
@@ -50,6 +47,24 @@ local dirtree = {}
     return filelist
   end
 
+
+  function dirtree.lines(path, glob_filter)
+    local path = path or "."
+    local glob_filter = glob_filter or ""
+    local luapat_filter = glob_filter:gsub('%*', '.*')
+    local recursive = true
+    local files = dirtree.getfiles(path, recursive, luapat_filter)
+    local lines = {}
+    if #files > 0 then
+      for _, f in ipairs(files) do
+        local indent = dirtree.rpad("", 2*f.level)
+        local icon = f.isdir and 'v ' or ''
+        local line = indent .. icon .. f.name
+        lines[#lines+1] = line
+      end
+    end
+    return lines
+  end
 
   function dirtree.str(path, glob_filter)
     local path = path or "."

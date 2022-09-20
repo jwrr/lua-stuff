@@ -20,64 +20,51 @@
 -- SOFTWARE.
 
 local curses  = require"curses"
+local stringx = require"pl.stringx"
 local textbox = require"textbox"
 local dirtree = require"dirtree"
 
-
 function filebrowser()
   local stdscr = curses.initscr()
-  stdscr:clear()
-  stdscr:refresh()
+   stdscr:clear()
+   stdscr:refresh()
 
 --   curses.cbreak()
   curses.raw()
   curses.echo(false)
   curses.nl(true)
 
+  local blue_on_yellow = 1
+  local red_on_black = 2
+  local green_on_black = 3
+  local white_on_black = 4
+  local very = 8
   curses.start_color();
-  curses.init_pair(1, curses.COLOR_BLUE,   curses.COLOR_YELLOW) -- curses.COLOR_RED, curses.COLOR_GREEN)
-  curses.init_pair(2, curses.COLOR_RED,   curses.COLOR_BLACK) -- curses.COLOR_RED, curses.COLOR_GREEN)
-  curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK) -- curses.COLOR_RED, curses.COLOR_GREEN)
-  curses.init_pair(4, curses.COLOR_WHITE,  curses.COLOR_BLACK) -- curses.COLOR_RED, curses.COLOR_GREEN)
-  curses.init_pair(5, 15,  0) -- curses.COLOR_RED, curses.COLOR_GREEN)
+  curses.use_default_colors()
+  curses.init_pair(blue_on_yellow, curses.COLOR_BLUE,   curses.COLOR_YELLOW) -- curses.COLOR_RED, curses.COLOR_GREEN)
+  curses.init_pair(red_on_black,   curses.COLOR_RED,   curses.COLOR_BLACK) -- curses.COLOR_RED, curses.COLOR_GREEN)
+  curses.init_pair(green_on_black, curses.COLOR_GREEN, curses.COLOR_BLACK) -- curses.COLOR_RED, curses.COLOR_GREEN)
+  curses.init_pair(white_on_black, curses.COLOR_WHITE, curses.COLOR_BLACK) -- curses.COLOR_RED, curses.COLOR_GREEN)
   
-  local height = 40
-  local width = 35
-  local starty = 1
-  local startx = 0
-  local name = 'explorer'
-  local border = true
-  textbox.new(name, height, width, starty, startx, border)
+  textbox.new({name = 'banner',  height =  1, width = 136, starty =  0, startx =  0, border = false, txtcolor = blue_on_yellow })
+  textbox.new({name = 'files',   height = 40, width =  35, starty =  1, startx =  0, border = true,  txtcolor = red_on_black })
+  textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 36, border = true,  txtcolor = white_on_black })
+  textbox.new({name = 'editor',  height = 30, width = 100, starty =  1, startx = 36, border = true,  txtcolor = white_on_black })
 
-  startx = width + 1
-  width  = 100
-  height = 30
-  textbox.new("text", height, width, starty, startx, border)
-
-  starty = starty + height
-  height = 10
-  textbox.new("status", height, width, starty, startx, true)
-
-  local full_width = 2*width + 1
-  textbox.new('banner', 1, 136, 0, 0, false)
   local banner = "Enter Ctrl-Q to quit"
-  banner = banner .. string.rep(" ", full_width - banner:len())
-  textbox.print('banner', banner, curses.A_REVERSE)
+  local txt = ''
 
-  textbox.all_windows['explorer'].win:attron(curses.color_pair(3))
-  textbox.all_windows['text'].win:attron(curses.color_pair(4))
+  repeat
+    local file_str = dirtree.str("..")
+    local file_tab = dirtree.lines("..")
 
-  local s = ''
-  local file_list = dirtree.str("..")
-  textbox.print('explorer', file_list)
-  textbox.print('status', s)
-  textbox.print('text', s)
+    textbox.print('banner', banner)
+    textbox.print_tab('files', file_tab)
+    textbox.print('status', txt)
+    textbox.print('editor', txt)
 
-  local is_quit_key = false
-
-  while not is_quit_key do
     local c = stdscr:getch()
-    is_quit_key  = (c == 17)
+    local is_quit_key  = (c == 17)
     local is_valid_key = (c <= 255)
     local is_enter_key = (c == 10)
     local is_backspace_key  = (c == 8) or (c == 127)
@@ -96,24 +83,15 @@ function filebrowser()
 --       
 --     end
     banner = "Enter Ctrl-Q to quit, '" .. ch_banner  .. "' (" .. tostring(c)  ..  '), size= ' .. tostring(maxx) .. 'x' .. tostring(maxy)
-    banner = textbox.rpad(banner, full_width)
-    textbox.print('banner', banner, curses.A_REVERSE)
 
     if is_backspace_key then
-      s = s:sub(1, -2)
+      txt = txt:sub(1, -2)
     else
-      s = s .. ch
+      txt = txt .. ch
     end
     
-    local file_list = dirtree.str("..")
-    textbox.print('explorer', file_list, curses.A_NORMAL)
-    textbox.print('status', s, curses.A_NORMAL)
-    textbox.print('text', s, curses.A_NORMAL)
-
---     stdscr:mvaddstr(1, 0, s)
---     stdscr:clrtobot()
---     stdscr:refresh()
-  end
+  until is_quit_key
+  
   curses.endwin()
 end
 
