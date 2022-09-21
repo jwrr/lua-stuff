@@ -26,30 +26,18 @@ local dirtree = require"dirtree"
 
 function filebrowser()
   local stdscr = curses.initscr()
-   stdscr:clear()
-   stdscr:refresh()
 
 --   curses.cbreak()
   curses.raw()
   curses.echo(false)
   curses.nl(true)
 
-  local blue_on_yellow = 1
-  local red_on_black = 2
-  local green_on_black = 3
-  local white_on_black = 4
-  local very = 8
-  curses.start_color();
-  curses.use_default_colors()
-  curses.init_pair(blue_on_yellow, curses.COLOR_BLUE,   curses.COLOR_YELLOW) -- curses.COLOR_RED, curses.COLOR_GREEN)
-  curses.init_pair(red_on_black,   curses.COLOR_RED,   curses.COLOR_BLACK) -- curses.COLOR_RED, curses.COLOR_GREEN)
-  curses.init_pair(green_on_black, curses.COLOR_GREEN, curses.COLOR_BLACK) -- curses.COLOR_RED, curses.COLOR_GREEN)
-  curses.init_pair(white_on_black, curses.COLOR_WHITE, curses.COLOR_BLACK) -- curses.COLOR_RED, curses.COLOR_GREEN)
-  
-  textbox.new({name = 'banner',  height =  1, width = 136, starty =  0, startx =  0, border = false, txtcolor = blue_on_yellow })
-  textbox.new({name = 'files',   height = 40, width =  35, starty =  1, startx =  0, border = true,  txtcolor = red_on_black })
-  textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 36, border = true,  txtcolor = white_on_black })
-  textbox.new({name = 'editor',  height = 30, width = 100, starty =  1, startx = 36, border = true,  txtcolor = white_on_black })
+  textbox.init_colors()
+
+  textbox.new({name = 'banner',  height =  1, width = 137, starty =  0, startx =  0, border = false, txtcolor = textbox.black_on_white, rpad = true })
+  textbox.new({name = 'nav',     height = 40, width =  35, starty =  1, startx =  0, border = true,  txtcolor = textbox.black_on_white, rpad  = true })
+  textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 36, border = true,  txtcolor = textbox.red_on_black })
+  textbox.new({name = 'editor',  height = 30, width = 100, starty =  1, startx = 36, border = true,  txtcolor = textbox.white_on_black })
 
   local banner = "Enter Ctrl-Q to quit"
   local txt = ''
@@ -59,7 +47,7 @@ function filebrowser()
     local file_tab = dirtree.lines("..")
 
     textbox.print('banner', banner)
-    textbox.print_tab('files', file_tab)
+    textbox.print_table('nav', file_tab)
     textbox.print('status', txt)
     textbox.print('editor', txt)
 
@@ -80,7 +68,7 @@ function filebrowser()
     local maxy, maxx = stdscr:getmaxyx()
 
 -- --     if  maxy /= prev_maxy or maxx /= prev_maxy then
---       
+--
 --     end
     banner = "Enter Ctrl-Q to quit, '" .. ch_banner  .. "' (" .. tostring(c)  ..  '), size= ' .. tostring(maxx) .. 'x' .. tostring(maxy)
 
@@ -89,9 +77,9 @@ function filebrowser()
     else
       txt = txt .. ch
     end
-    
+
   until is_quit_key
-  
+
   curses.endwin()
 end
 

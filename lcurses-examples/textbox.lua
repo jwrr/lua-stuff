@@ -20,27 +20,89 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
+  local M = {}
+
+
   local curses  = require"curses"
   local stringx = require"pl.stringx"
   local dirtree = require"dirtree"
 
 
-  local textbox = {}
-  textbox.all_windows = {}
+  M.all_windows = {}
 
 
-  function textbox.rpad(str, len)
+  function M.rpad(str, len)
     return str .. string.rep(" ", len - #str)
   end
 
 
-  function textbox.color_pair(name, color)
-    textbox.all_windows[name].win:attron(curses.color_pair(color))
+  function M.htmlcolor(id, colorcode)
+    local blue  = (colorcode & 0xff) * 1000 // 255
+    colorcode   = colorcode >> 8
+    local green = (colorcode & 0xff) * 1000 // 255
+    colorcode   = colorcode >> 8
+    local red   = (colorcode & 0xff) * 1000 // 255
+    curses.init_color(id, red, green, blue)
   end
 
-  function textbox.new(cfg)
 
-    cfg.name   = cfg.name or tostring(#textbox.all_windows)
+  function M.color(name, color)
+    M.all_windows[name].win:attron(curses.color_pair(color))
+  end
+
+
+  function M.init_colors()
+    M.black_on_black   = 1
+    M.red_on_black     = 2
+    M.green_on_black   = 3
+    M.yellow_on_black  = 4
+    M.blue_on_black    = 5
+    M.magenta_on_black = 6
+    M.cyan_on_black    = 7
+    M.white_on_black   = 8
+    M.black_on_white   = 9
+    M.red_on_white     = 10
+    M.green_on_white   = 11
+    M.yellow_on_white  = 12
+    M.blue_on_white    = 13
+    M.magenta_on_white = 14
+    M.cyan_on_white    = 15
+    M.white_on_white   = 16
+  
+    curses.start_color();
+  
+    M.htmlcolor(curses.COLOR_BLACK,   0x000000)
+    M.htmlcolor(curses.COLOR_RED,     0xcc3333)
+    M.htmlcolor(curses.COLOR_GREEN,   0x008800)
+    M.htmlcolor(curses.COLOR_YELLOW,  0xa0a000)
+    M.htmlcolor(curses.COLOR_BLUE,    0x5555ff)
+    M.htmlcolor(curses.COLOR_MAGENTA, 0xdd00dd)
+    M.htmlcolor(curses.COLOR_CYAN,    0x008888)
+    M.htmlcolor(curses.COLOR_WHITE,   0xcccccc)
+  
+    curses.init_pair(M.black_on_black,   curses.COLOR_BLACK,   curses.COLOR_BLACK)
+    curses.init_pair(M.red_on_black,     curses.COLOR_RED,     curses.COLOR_BLACK)
+    curses.init_pair(M.green_on_black,   curses.COLOR_GREEN,   curses.COLOR_BLACK)
+    curses.init_pair(M.yellow_on_black,  curses.COLOR_YELLOW,  curses.COLOR_BLACK)
+    curses.init_pair(M.blue_on_black,    curses.COLOR_BLUE,    curses.COLOR_BLACK)
+    curses.init_pair(M.magenta_on_black, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+    curses.init_pair(M.cyan_on_black,    curses.COLOR_CYAN,    curses.COLOR_BLACK)
+    curses.init_pair(M.white_on_black,   curses.COLOR_WHITE,   curses.COLOR_BLACK)
+  
+    curses.init_pair(M.black_on_white,   curses.COLOR_BLACK,   curses.COLOR_WHITE)
+    curses.init_pair(M.red_on_white,     curses.COLOR_RED,     curses.COLOR_WHITE)
+    curses.init_pair(M.green_on_white,   curses.COLOR_GREEN,   curses.COLOR_WHITE)
+    curses.init_pair(M.yellow_on_white,  curses.COLOR_YELLOW,  curses.COLOR_WHITE)
+    curses.init_pair(M.blue_on_white,    curses.COLOR_BLUE,    curses.COLOR_WHITE)
+    curses.init_pair(M.magenta_on_white, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
+    curses.init_pair(M.cyan_on_white,    curses.COLOR_CYAN,    curses.COLOR_WHITE)
+    curses.init_pair(M.white_on_white,   curses.COLOR_WHITE,   curses.COLOR_WHITE)
+  end
+
+
+  function M.new(cfg)
+
+    cfg.name   = cfg.name or tostring(#M.all_windows)
     cfg.height = cfg.height or 10
     cfg.width  = cfg.width  or 10
     cfg.starty = cfg.starty or 10
@@ -54,9 +116,11 @@
 
     if cfg.border then
       local box_win = curses.newwin(cfg.height, cfg.width, cfg.starty, cfg.startx)
-      textbox.all_windows[name .. "_box"] = {}
-      textbox.all_windows[name .. "_box"].win = box_win
-      textbox.all_windows[name .. "_box"].isbox = true
+      local this = {}
+      this = {}
+      this.win = box_win
+      this.isbox = true
+      M.all_windows[name .. "_box"] = this
       txt_height = cfg.height - 2
       txt_width  = cfg.width - 2
       txt_starty = cfg.starty + 1
@@ -64,71 +128,77 @@
     end
 
     local txt_win = curses.newwin(txt_height, txt_width, txt_starty, txt_startx)
-    textbox.all_windows[name] = {}
-    textbox.all_windows[name].win         = txt_win
-    textbox.all_windows[name].box_height  = cfg.height
-    textbox.all_windows[name].box_width   = cfg.width
-    textbox.all_windows[name].box_starty  = cfg.starty
-    textbox.all_windows[name].box_startx  = cfg.startx
-    textbox.all_windows[name].txt_height  = txt_height
-    textbox.all_windows[name].txt_width   = txt_width
-    textbox.all_windows[name].txt_starty  = txt_starty
-    textbox.all_windows[name].txt_startx  = txt_startx
-    textbox.all_windows[name].isbox       = false
-    textbox.all_windows[name].inbox       = cfg.border
-    textbox.all_windows[name].txt_color   = cfg.txt_color
+    local this = {}
+    this.win         = txt_win
+    this.box_height  = cfg.height
+    this.box_width   = cfg.width
+    this.box_starty  = cfg.starty
+    this.box_startx  = cfg.startx
+    this.txt_height  = txt_height
+    this.txt_width   = txt_width
+    this.txt_starty  = txt_starty
+    this.txt_startx  = txt_startx
+    this.isbox       = false
+    this.inbox       = cfg.border
+    this.txt_color   = cfg.txt_color
+    this.rpad        = cfg.rpad or false
+    this.start_line  = cfg.start_line or 1
+    this.start_col   = cfg.start_col or 1
+    this.cursor_y    = cfg.cursor_y or 1
+    this.cursor_x    = cfg.cursor_x or 1
+    M.all_windows[name] = this
     if cfg.txtcolor then
-      textbox.color_pair(name, cfg.txtcolor)
+      M.color(name, cfg.txtcolor)
     end
   end
 
 
 
-  function textbox.refresh(name)
-    if textbox.all_windows[name].inbox then
+  function M.refresh(name)
+    if M.all_windows[name].inbox then
       local box_name = name .. '_box'
-      textbox.all_windows[box_name].win:box(0, 0)
-      textbox.all_windows[box_name].win:refresh()
+      M.all_windows[box_name].win:box(0, 0)
+      M.all_windows[box_name].win:refresh()
     end
-    textbox.all_windows[name].win:refresh()
+    M.all_windows[name].win:refresh()
   end
 
 
-  function textbox.print_tab(name, t, action)
-    attr = attr or curses.A_NORMAL
+  function M.print_table(name, t, action)
     action = action or 'init' -- 'init', 'insert'
-    local txt_width = textbox.all_windows[name].txt_width - 1
+    local this = M.all_windows[name]
+    local txt_width = this.txt_width - 1
     
-    local s = ""
-    for _,v in ipairs(t) do
-      local line = stringx.shorten(v, txt_width)
-      line = textbox.rpad(line, txt_width)
-      s = s .. line .. "\n"
+    this.win:move(0,0)
+    for i,v in ipairs(t) do
+      local line = stringx.rstrip(v, "\n\r")
+      local endl = (line ~= v)
+      line = stringx.shorten(line, txt_width)
+      
+      if this.rpad then
+        line = M.rpad(line, txt_width)
+      end
+      local lastline = (i == #t)
+      if endl or not lastline then
+        line = line .. "\n"
+      end
+      this.win:addstr(line)
     end
-    
-    local win = textbox.all_windows[name].win
-    win:mvaddstr(0, 0, s)
-    win:clrtobot()
-    textbox.refresh(name)
+    this.win:clrtobot()
+    M.refresh(name)
   end
 
 
 
-  function textbox.print(name, str, attr)
-    attr = attr or curses.A_NORMAL
-    local win = textbox.all_windows[name].win
-    win:attron(attr)
-    win:mvaddstr(0, 0, str)
-    win:attroff(attr)
-    win:clrtobot()
-    textbox.refresh(name)
+  function M.print(name, str, action)
+    M.print_table(name, stringx.splitlines(str, true), action)
   end
 
 
 
   -- To display Lua errors, we must close curses to return to
   -- normal terminal mode, and then write the error to stdout.
-  function textbox.err(err)
+  function M.err(err)
     curses.endwin()
     print "Caught an error:"
     print(debug.traceback(err, 2))
@@ -136,6 +206,6 @@
   end
 
 
-return textbox
+return M
 
 
