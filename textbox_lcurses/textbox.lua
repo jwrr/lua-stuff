@@ -25,10 +25,12 @@
 
   local curses  = require"curses"
   local stringx = require"pl.stringx"
+  local utils   = require"pl.utils"
   local dirtree = require"dirtree"
 
 
   M.all_windows = {}
+  M.active_window = ""
 
 
   function M.rpad(str, len)
@@ -68,9 +70,9 @@
     M.magenta_on_white = 14
     M.cyan_on_white    = 15
     M.white_on_white   = 16
-  
+
     curses.start_color();
-  
+
     M.htmlcolor(curses.COLOR_BLACK,   0x000000)
     M.htmlcolor(curses.COLOR_RED,     0xcc3333)
     M.htmlcolor(curses.COLOR_GREEN,   0x008800)
@@ -79,7 +81,7 @@
     M.htmlcolor(curses.COLOR_MAGENTA, 0xdd00dd)
     M.htmlcolor(curses.COLOR_CYAN,    0x008888)
     M.htmlcolor(curses.COLOR_WHITE,   0xcccccc)
-  
+
     curses.init_pair(M.black_on_black,   curses.COLOR_BLACK,   curses.COLOR_BLACK)
     curses.init_pair(M.red_on_black,     curses.COLOR_RED,     curses.COLOR_BLACK)
     curses.init_pair(M.green_on_black,   curses.COLOR_GREEN,   curses.COLOR_BLACK)
@@ -88,7 +90,7 @@
     curses.init_pair(M.magenta_on_black, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
     curses.init_pair(M.cyan_on_black,    curses.COLOR_CYAN,    curses.COLOR_BLACK)
     curses.init_pair(M.white_on_black,   curses.COLOR_WHITE,   curses.COLOR_BLACK)
-  
+
     curses.init_pair(M.black_on_white,   curses.COLOR_BLACK,   curses.COLOR_WHITE)
     curses.init_pair(M.red_on_white,     curses.COLOR_RED,     curses.COLOR_WHITE)
     curses.init_pair(M.green_on_white,   curses.COLOR_GREEN,   curses.COLOR_WHITE)
@@ -100,67 +102,83 @@
   end
 
 
+  function M.tmerge(t1, t2)
+    for k,v in pairs(t2) do
+      t1[k] = v
+    end
+  end
+
+  function M.update(name, cfg)
+    local this = M.all_windows[name]
+    M.tmerge(this, cfg)
+  end
+
+
+  function M.newbox(cfg)
+    local this = {}
+    M.tmerge(this, cfg)
+    this.isbox = true
+    this.win = curses.newwin(this.height, this.width, this.starty, this.startx)
+    return this
+  end
+
+
   function M.new(cfg)
 
     cfg.name   = cfg.name or tostring(#M.all_windows)
+    cfg.hasborder = cfg.hasborder or false
     cfg.height = cfg.height or 10
     cfg.width  = cfg.width  or 10
     cfg.starty = cfg.starty or 10
     cfg.startx = cfg.startx or 10
-    
+
     local name = cfg.name
-    local txt_height = cfg.height
-    local txt_width  = cfg.width
-    local txt_starty = cfg.starty
-    local txt_startx = cfg.startx
 
-    if cfg.border then
-      local box_win = curses.newwin(cfg.height, cfg.width, cfg.starty, cfg.startx)
-      local this = {}
-      this = {}
-      this.win = box_win
-      this.isbox = true
-      M.all_windows[name .. "_box"] = this
-      txt_height = cfg.height - 2
-      txt_width  = cfg.width - 2
-      txt_starty = cfg.starty + 1
-      txt_startx = cfg.startx + 1
+    if cfg.hasborder then
+      local boxname = name .. "_box"
+      M.all_windows[boxname] = M.newbox({name = boxname, height = cfg.height, width = cfg.width, starty = cfg.starty, startx = cfg.startx})
+      cfg.txt_height = cfg.height - 2
+      cfg.txt_width  = cfg.width - 2
+      cfg.txt_starty = cfg.starty + 1
+      cfg.txt_startx = cfg.startx + 1
+    else
+      cfg.txt_height = cfg.height
+      cfg.txt_width  = cfg.width
+      cfg.txt_starty = cfg.starty
+      cfg.txt_startx = cfg.startx
     end
 
-    local txt_win = curses.newwin(txt_height, txt_width, txt_starty, txt_startx)
     local this = {}
-    this.win         = txt_win
-    this.box_height  = cfg.height
-    this.box_width   = cfg.width
-    this.box_starty  = cfg.starty
-    this.box_startx  = cfg.startx
-    this.txt_height  = txt_height
-    this.txt_width   = txt_width
-    this.txt_starty  = txt_starty
-    this.txt_startx  = txt_startx
-    this.isbox       = false
-    this.inbox       = cfg.border
-    this.txt_color   = cfg.txt_color
-    this.rpad        = cfg.rpad or false
-    this.start_line  = cfg.start_line or 1
-    this.start_col   = cfg.start_col or 1
-    this.cursor_y    = cfg.cursor_y or 1
-    this.cursor_x    = cfg.cursor_x or 1
+    M.tmerge(this, cfg)
+    this.isbox = false
+    this.win   = curses.newwin(cfg.txt_height, cfg.txt_width, cfg.txt_starty, cfg.txt_startx)
     M.all_windows[name] = this
-    if cfg.txtcolor then
-      M.color(name, cfg.txtcolor)
+    if this.active then
+      M.active_window = "name"
     end
+    if this.txtcolor then
+      M.color(name, this.txtcolor)
+    end
+
+    if this.filename then
+      this.lines = utils.readlines(this.filename)
+    end
+    
   end
 
 
-
   function M.refresh(name)
-    if M.all_windows[name].inbox then
+    local this = M.all_windows[name]
+    if this.hasborder then
       local box_name = name .. '_box'
+      local color = M.white_on_black
+      if this.active then
+        M.color(box_name, M.yellow_on_black)
+      end
       M.all_windows[box_name].win:box(0, 0)
       M.all_windows[box_name].win:refresh()
     end
-    M.all_windows[name].win:refresh()
+    this.win:refresh()
   end
 
 
@@ -168,13 +186,13 @@
     action = action or 'init' -- 'init', 'insert'
     local this = M.all_windows[name]
     local txt_width = this.txt_width - 1
-    
+
     this.win:move(0,0)
     for i,v in ipairs(t) do
       local line = stringx.rstrip(v, "\n\r")
       local endl = (line ~= v)
       line = stringx.shorten(line, txt_width)
-      
+
       if this.rpad then
         line = M.rpad(line, txt_width)
       end

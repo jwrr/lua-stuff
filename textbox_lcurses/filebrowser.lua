@@ -31,13 +31,14 @@ function filebrowser()
   curses.raw()
   curses.echo(false)
   curses.nl(true)
+  curses.keypad()
 
   textbox.init_colors()
 
-  textbox.new({name = 'banner',  height =  1, width = 137, starty =  0, startx =  0, border = false, txtcolor = textbox.black_on_white, rpad = true })
-  textbox.new({name = 'nav',     height = 40, width =  35, starty =  1, startx =  0, border = true,  txtcolor = textbox.black_on_white, rpad  = true })
-  textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 36, border = true,  txtcolor = textbox.red_on_black })
-  textbox.new({name = 'editor',  height = 30, width = 100, starty =  1, startx = 36, border = true,  txtcolor = textbox.white_on_black })
+  textbox.new({name = 'banner',  height =  1, width = 137, starty =  0, startx =  0, hasborder = false, txtcolor = textbox.black_on_white, rpad = true })
+  textbox.new({name = 'nav',     height = 40, width =  35, starty =  1, startx =  0, hasborder = true,  txtcolor = textbox.black_on_white, rpad  = true})
+  textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 36, hasborder = true,  txtcolor = textbox.red_on_black })
+  textbox.new({name = 'editor',  height = 30, width = 100, starty =  1, startx = 36, hasborder = true,  txtcolor = textbox.white_on_black, active = true })
 
   local banner = "Enter Ctrl-Q to quit"
   local txt = ''
