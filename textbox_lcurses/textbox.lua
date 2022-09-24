@@ -39,12 +39,13 @@
 
 
   function M.htmlcolor(id, colorcode)
+    if not curses.can_change_color() then return false end
     local blue  = (colorcode & 0xff) * 1000 // 255
     colorcode   = colorcode >> 8
     local green = (colorcode & 0xff) * 1000 // 255
     colorcode   = colorcode >> 8
     local red   = (colorcode & 0xff) * 1000 // 255
-    curses.init_color(id, red, green, blue)
+    return curses.init_color(id, red, green, blue)
   end
 
 
