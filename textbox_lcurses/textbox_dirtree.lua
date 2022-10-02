@@ -22,8 +22,10 @@
 
 local M = {}
 
+  M.current_line = 1;
 
-  local lfs = require"lfs"
+  local lfs = require'lfs'
+  local textbox = require'textbox'
 
   function M.rpad(str, len)
     return str .. string.rep(" ", len - #str)
@@ -107,8 +109,26 @@ local M = {}
     return file_str
   end
 
+
+  function M.open(new_window)
+    new_window = new_window or 'editor'
+    local tmp_window = textbox.active_window
+    textbox.active_window = 'editor'
+    textbox.refresh(new_window)
+    textbox.refresh(tmp_window)
+  end
+
+
+  function M.new(cfg)
+    cfg['name'] = 'nav'
+    textbox.new(cfg)
+    textbox.register('nav', 'open', M.open)
+  end
+
+
 -- ==================================================================
 -- ==================================================================
+
 
   function M.test()
     local path = arg[1] or "."

@@ -26,7 +26,6 @@
   local curses  = require"curses"
   local stringx = require"pl.stringx"
   local utils   = require"pl.utils"
-  local dirtree = require"dirtree"
 
 
   function M.setmaxyx(maxy, maxx)
@@ -114,6 +113,8 @@
   end
 
 
+
+
   function M.shallow_merge(t1, t2)
     for k,v in pairs(t2) do
       t1[k] = v
@@ -180,7 +181,7 @@
     M.shallow_merge(this, cfg)
 
     if this.active then
-      M.active_window = "name"
+      M.active_window = name
     end
     if this.color_pair then
       M.set_color_pair(name, this.color_pair)
@@ -220,10 +221,12 @@
     M.shallow_merge(this, cfg)
     this.isbox = false
     this.win   = curses.newwin(cfg.txt_height, cfg.txt_width, cfg.txt_starty, cfg.txt_startx)
+
     M.all_windows[name] = this
+    M.all_windows[name].window_specific_commands = {}
     M.all_windows[name].id = #M.all_windows[name]
     if this.active then
-      M.active_window = "name"
+      M.active_window = name
     end
     if this.color_pair then
       M.set_color_pair(name, this.color_pair)
@@ -238,13 +241,29 @@
   end
 
 
+  function M.resize_windows(stdscr)
+    local prev_maxy, prev_maxx = M.getmaxyx()
+    local maxy, maxx = stdscr:getmaxyx()
+    if  maxy ~= prev_maxy or maxx ~= prev_maxx then
+      M.setmaxyx(maxy, maxx)
+      M.update({name = "banner", width = maxx})
+      M.update({name = "editor", width = maxx - 36, height = maxy - 11})
+      M.update({name = "status", width = maxx - 36, starty = maxy - 10})
+      M.update({name = "nav",    height = maxy-1})
+    end
+    return maxy, maxx
+  end
+
+
   function M.refresh(name)
     local this = M.all_windows[name]
     if this.hasborder then
       local box_name = name .. '_box'
       local color = M.white_on_black
-      if this.active then
-        M.set_color_pair(box_name, M.yellow_on_black)
+      if M.active_window == name then
+        M.set_color_pair(box_name, M.red_on_black)
+      else
+        M.set_color_pair(box_name, M.white_on_black)
       end
       M.all_windows[box_name].win:box(0, 0)
       M.all_windows[box_name].win:refresh()
@@ -260,16 +279,16 @@
   end
 
 
-  function M.print_table(name, t, action)
+  function M.print_lines(name, lines, action)
     action = action or 'init' -- 'init', 'insert'
     local this = M.all_windows[name]
     local txt_width = this.txt_width - 1
     this.win:move(0,0)
-    for i,v in ipairs(t) do
-      local line = stringx.rstrip(v, "\n\r")
-      local endl = (line ~= v)
+    for i,line in ipairs(lines) do
+      local line = stringx.rstrip(line, "\n\r")
+      local endl = (line ~= line)
       line = stringx.shorten(line, txt_width)
-      local lastline = (i == #t)
+      local lastline = (i == #lines)
       if endl or not lastline then
         line = line .. "\n"
       end
@@ -280,11 +299,85 @@
   end
 
 
-
   function M.print(name, str, action)
-    M.print_table(name, stringx.splitlines(str, true), action)
+    M.print_lines(name, stringx.splitlines(str, true), action)
+  end
+  
+  function M.is_hotkey(str)
+    return false
   end
 
+  
+--   function M.open()
+--     local tmp_window = M.active_window
+--     M.active_window = "nav"
+--     M.refresh(tmp_window)
+--   end
+
+
+  M.dbg_str = "dbg\n"
+
+  function M.register(wname, fname, func)
+    local active_window = M.active_window
+    M.all_windows[wname].window_specific_commands[fname] = func -- "abc"
+    M.dbg_str = M.dbg_str .. "register: " .. wname .. " " .. fname .. "\n"
+  end
+
+  
+  M.cmd_t = M.cmd_t or {mode = false, str = ""}
+  function M.cmd(c)
+    local is_esc_key = (c == 27)
+    local is_enter_key = (c == 10) or (c == 13)
+    if is_esc_key then
+      M.cmd_t.mode = not M.cmd_t.mode
+      M.cmd_t.str = ''
+      return true
+    elseif M.cmd_t.mode then
+      if not is_enter_key then
+        local is_valid_key = (c <= 255)        
+        if is_valid_key then 
+          M.cmd_t.str = M.cmd_t.str .. string.char(c)
+        end
+      end
+      if is_enter_key or M.is_hotkey(M.cmd_t.str) then
+        local cmd_str = M.cmd_t.str
+        local active_window = M.active_window
+        M.dbg_str = M.dbg_str .. "active=" .. active_window  .. "cmd_str='" .. cmd_str .. "'\n"
+        if M.all_windows[active_window].window_specific_commands[cmd_str] then
+          M.dbg_str = M.dbg_str .. "in\n"
+          local cmd_function = M.all_windows[active_window].window_specific_commands[cmd_str] 
+          cmd_function()
+        elseif M[M.cmd_t.str] then -- common text_box command 
+          M[M.cmd_t.str]()
+        end
+        M.cmd_t.str = ''
+      end
+      return true
+    end
+    return false
+  end
+
+
+  M.banner_struct = {mode = true}
+  function M.banner(c)
+    local is_enter_key = (c == 10)
+    local is_backspace_key  = (c == 8) or (c == 127)
+    local ch = is_valid_key and string.char(c) or ''
+    local ch_banner = ch
+    if is_enter_key then
+      ch_banner = '<cr>'
+    elseif is_backspace_key then
+      ch_banner = '<bs>'
+    end
+    local banner = ""
+    if M.cmd_t.mode then
+      banner = "cmd: " .. M.cmd_t.str
+    else
+      local maxx, maxy = M.getmaxyx()
+      banner = "Enter Ctrl-Q to quit, '" .. ch_banner  .. "' (" .. tostring(c)  ..  '), size= ' .. tostring(maxx) .. 'x' .. tostring(maxy)
+    end
+    return banner
+  end
 
 
   -- To display Lua errors, we must close curses to return to
