@@ -20,32 +20,45 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-  local M = {}
+local M = {}
 
   local textbox = require'textbox'
-
-  M.name = 'editor'
-
-  function M.open()
-    local tmp_window = textbox.active_window
-    textbox.active_window = "nav"
-    textbox.refresh(tmp_window)
-  end
-
-  function M.quit()
-    textbox.quit(true)
-  end
+  local win_name = 'banner'
 
   function M.new(cfg)
-    cfg['name'] = 'editor'
+    cfg['name'] = win_name
     textbox.new(cfg)
-    textbox.cmd.register("editor", "open", M.open, "Open file for editing")
-    textbox.cmd.register("editor", "quit", M.quit, "Quit")
   end
-  
-  function M.print(txt)
-    txt = txt or ''
-    textbox.print(M.name, txt)
+
+
+  M.banner_struct = {visible = true}
+
+  function M.tostring()
+    local c = textbox.cmd.c
+    local ch_banner = textbox.cmd.ch or "r"
+    local is_enter_key = textbox.cmd.is_enter_key
+    local is_backspace_key = textbox.cmd.is_backspace_key
+    local is_valid_key = textbox.cmd.is_valid_key 
+    if is_enter_key then
+      ch_banner = '<cr>'
+    elseif is_backspace_key then
+      ch_banner = '<bs>'
+    end
+    local banner_str = ""
+    if textbox.cmd.cmd_t.mode then
+      banner_str = "cmd: " .. textbox.cmd.cmd_t.str
+    else
+      local stdscr = M.stdscr
+      local maxx, maxy = textbox.updatemaxyx(stdscr)
+      banner_str = "Enter Ctrl-Q to quit, '" .. ch_banner  .. "' (" .. tostring(c)  ..  '), size= ' .. tostring(maxx) .. 'x' .. tostring(maxy)
+    end
+    return banner_str
+  end
+
+
+  function M.print(str)
+    str = str or M.tostring(textbox.cmd.c)
+    textbox.print(win_name, str)
   end
 
 return M

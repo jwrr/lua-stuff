@@ -110,6 +110,23 @@ local M = {}
   end
 
 
+  function M.print()
+    local files = M.lines("..")
+    textbox.print_lines('nav', files)
+  end
+
+
+  function M.new(cfg)
+    wname = 'nav'
+    cfg['name'] = wname
+    textbox.new(cfg)
+    M.register_functions(wname)
+  end
+  
+  
+-- ======================================================
+-- ======================================================
+
   function M.open(new_window)
     new_window = new_window or 'editor'
     local tmp_window = textbox.active_window
@@ -119,12 +136,21 @@ local M = {}
   end
 
 
-  function M.new(cfg)
-    cfg['name'] = 'nav'
-    textbox.new(cfg)
-    textbox.register('nav', 'open', M.open)
+  function M.up()
+    M.current_line = M.current_line - 1
   end
 
+
+  function M.down()
+    M.current_line = M.current_line + 1
+  end
+
+
+  function M.register_functions(wname)
+    textbox.cmd.register(wname, 'open', M.open, "Open selected file")
+    textbox.cmd.register(wname, 'up',   M.up,   "Scroll up to previous file")
+    textbox.cmd.register(wname, 'down', M.down, "Scroll down to next file")
+  end
 
 -- ==================================================================
 -- ==================================================================

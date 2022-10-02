@@ -23,9 +23,42 @@
   local M = {}
 
 
-  local curses  = require"curses"
-  local stringx = require"pl.stringx"
-  local utils   = require"pl.utils"
+  local curses  = require'curses'
+  local stringx = require'pl.stringx'
+  local utils   = require'pl.utils'
+  M.cmd   = require'textbox_cmd'
+  M.color = require'textbox_color'
+
+  M.all_windows = {}
+  M.active_window = ''
+  M.dbg_str = 'dbg\n'
+  
+
+  function M.start()
+    M.stdscr = curses.initscr()
+    curses.raw() -- cbreak
+    curses.echo(false)
+    curses.nl(true)
+    curses.keypad()
+    M.color.start()
+    return M.stdscr
+  end
+
+
+  function M.quit(force_quit)
+    force_quit = force_quit or false
+    M.force_quit = M.force_quit or force_quit
+    if M.cmd.is_quit_key or M.force_quit then
+      curses.endwin()
+      return true
+    end
+    return false
+  end
+
+
+  function M.getch()
+    return M.stdscr:getch()
+  end
 
 
   function M.setmaxyx(maxy, maxx)
@@ -33,86 +66,22 @@
     M.maxx = maxx
   end
 
-  
+
+  function M.updatemaxyx(stdscr)
+--     local maxy, maxx = stdscr:getmaxyx()
+--     M.setmaxyx(maxy, maxx)
+    return M.maxy, M.maxx
+  end
+
+
   function M.getmaxyx()
     return M.maxy, M.maxx
   end
 
 
-  M.all_windows = {}
-  M.active_window = ""
-
-
   function M.rpad(str, len)
     return str .. string.rep(" ", len - #str)
   end
-
-
-  function M.htmlcolor(id, colorcode)
-    if not curses.can_change_color() then return false end
-    local blue  = (colorcode & 0xff) * 1000 // 255
-    colorcode   = colorcode >> 8
-    local green = (colorcode & 0xff) * 1000 // 255
-    colorcode   = colorcode >> 8
-    local red   = (colorcode & 0xff) * 1000 // 255
-    return curses.init_color(id, red, green, blue)
-  end
-
-
-  function M.set_color_pair(name, color_pair)
-    M.all_windows[name].win:attron(curses.color_pair(color_pair))
-  end
-
-
-  function M.start_color()
-    M.black_on_black   = 1
-    M.red_on_black     = 2
-    M.green_on_black   = 3
-    M.yellow_on_black  = 4
-    M.blue_on_black    = 5
-    M.magenta_on_black = 6
-    M.cyan_on_black    = 7
-    M.white_on_black   = 8
-    M.black_on_white   = 9
-    M.red_on_white     = 10
-    M.green_on_white   = 11
-    M.yellow_on_white  = 12
-    M.blue_on_white    = 13
-    M.magenta_on_white = 14
-    M.cyan_on_white    = 15
-    M.white_on_white   = 16
-
-    curses.start_color();
-
-    M.htmlcolor(curses.COLOR_BLACK,   0x000000)
-    M.htmlcolor(curses.COLOR_RED,     0xcc3333)
-    M.htmlcolor(curses.COLOR_GREEN,   0x008800)
-    M.htmlcolor(curses.COLOR_YELLOW,  0xa0a000)
-    M.htmlcolor(curses.COLOR_BLUE,    0x5555ff)
-    M.htmlcolor(curses.COLOR_MAGENTA, 0xdd00dd)
-    M.htmlcolor(curses.COLOR_CYAN,    0x008888)
-    M.htmlcolor(curses.COLOR_WHITE,   0xcccccc)
-
-    curses.init_pair(M.black_on_black,   curses.COLOR_BLACK,   curses.COLOR_BLACK)
-    curses.init_pair(M.red_on_black,     curses.COLOR_RED,     curses.COLOR_BLACK)
-    curses.init_pair(M.green_on_black,   curses.COLOR_GREEN,   curses.COLOR_BLACK)
-    curses.init_pair(M.yellow_on_black,  curses.COLOR_YELLOW,  curses.COLOR_BLACK)
-    curses.init_pair(M.blue_on_black,    curses.COLOR_BLUE,    curses.COLOR_BLACK)
-    curses.init_pair(M.magenta_on_black, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-    curses.init_pair(M.cyan_on_black,    curses.COLOR_CYAN,    curses.COLOR_BLACK)
-    curses.init_pair(M.white_on_black,   curses.COLOR_WHITE,   curses.COLOR_BLACK)
-
-    curses.init_pair(M.black_on_white,   curses.COLOR_BLACK,   curses.COLOR_WHITE)
-    curses.init_pair(M.red_on_white,     curses.COLOR_RED,     curses.COLOR_WHITE)
-    curses.init_pair(M.green_on_white,   curses.COLOR_GREEN,   curses.COLOR_WHITE)
-    curses.init_pair(M.yellow_on_white,  curses.COLOR_YELLOW,  curses.COLOR_WHITE)
-    curses.init_pair(M.blue_on_white,    curses.COLOR_BLUE,    curses.COLOR_WHITE)
-    curses.init_pair(M.magenta_on_white, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
-    curses.init_pair(M.cyan_on_white,    curses.COLOR_CYAN,    curses.COLOR_WHITE)
-    curses.init_pair(M.white_on_white,   curses.COLOR_WHITE,   curses.COLOR_WHITE)
-  end
-
-
 
 
   function M.shallow_merge(t1, t2)
@@ -136,7 +105,7 @@
     local this = M.all_windows[cfg.name] or {}
     cfg.hasborder = cfg.hasborder or this.hasborder
     cfg.height = cfg.height or this.height
-    cfg.width  = cfg.width or this.width
+    cfg.width  = cfg.width  or this.width
     cfg.starty = cfg.starty or this.starty
     cfg.startx = cfg.startx or this.startx
     local name = cfg.name
@@ -144,7 +113,7 @@
     if cfg.hasborder then
       local boxname = name .. "_box"
       thisbox = M.all_windows[boxname]
-      if cfg.height ~= thisbox.height or cfg.width ~= thisbox.width then
+      if cfg.height ~= this.height or cfg.width ~= this.width then
         thisbox.win:resize(cfg.height, cfg.width)
         thisbox.win:clear()
         thisbox.win:box(0,0)
@@ -184,9 +153,9 @@
       M.active_window = name
     end
     if this.color_pair then
-      M.set_color_pair(name, this.color_pair)
+      M.color.set_color_pair(M, name, this.color_pair)
     end
-    
+
     this.win:wbkgd(curses.color_pair(this.color_pair))
 
   end
@@ -223,25 +192,28 @@
     this.win   = curses.newwin(cfg.txt_height, cfg.txt_width, cfg.txt_starty, cfg.txt_startx)
 
     M.all_windows[name] = this
-    M.all_windows[name].window_specific_commands = {}
     M.all_windows[name].id = #M.all_windows[name]
+    M.all_windows[name].window_specific_commands = {}
+    M.all_windows[name].window_specific_command_description = {}
+
     if this.active then
       M.active_window = name
     end
     if this.color_pair then
-      M.set_color_pair(name, this.color_pair)
+      M.color.set_color_pair(M, name, this.color_pair)
     end
-    
+
     this.win:wbkgd(curses.color_pair(this.color_pair))
 
     if this.filename then
       this.lines = utils.readlines(this.filename)
     end
-    
+
   end
 
 
-  function M.resize_windows(stdscr)
+  function M.resize_windows()
+    local stdscr = M.stdscr
     local prev_maxy, prev_maxx = M.getmaxyx()
     local maxy, maxx = stdscr:getmaxyx()
     if  maxy ~= prev_maxy or maxx ~= prev_maxx then
@@ -261,9 +233,9 @@
       local box_name = name .. '_box'
       local color = M.white_on_black
       if M.active_window == name then
-        M.set_color_pair(box_name, M.red_on_black)
+        M.color.set_color_pair(M, box_name, M.color.red_on_black)
       else
-        M.set_color_pair(box_name, M.white_on_black)
+        M.color.set_color_pair(M, box_name, M.color.white_on_black)
       end
       M.all_windows[box_name].win:box(0, 0)
       M.all_windows[box_name].win:refresh()
@@ -271,7 +243,7 @@
     this.win:refresh()
   end
 
-  
+
   function M.refresh_all()
     for k,v in ipairs(M.all_windows) do
       M.refresh(k)
@@ -301,82 +273,6 @@
 
   function M.print(name, str, action)
     M.print_lines(name, stringx.splitlines(str, true), action)
-  end
-  
-  function M.is_hotkey(str)
-    return false
-  end
-
-  
---   function M.open()
---     local tmp_window = M.active_window
---     M.active_window = "nav"
---     M.refresh(tmp_window)
---   end
-
-
-  M.dbg_str = "dbg\n"
-
-  function M.register(wname, fname, func)
-    local active_window = M.active_window
-    M.all_windows[wname].window_specific_commands[fname] = func -- "abc"
-    M.dbg_str = M.dbg_str .. "register: " .. wname .. " " .. fname .. "\n"
-  end
-
-  
-  M.cmd_t = M.cmd_t or {mode = false, str = ""}
-  function M.cmd(c)
-    local is_esc_key = (c == 27)
-    local is_enter_key = (c == 10) or (c == 13)
-    if is_esc_key then
-      M.cmd_t.mode = not M.cmd_t.mode
-      M.cmd_t.str = ''
-      return true
-    elseif M.cmd_t.mode then
-      if not is_enter_key then
-        local is_valid_key = (c <= 255)        
-        if is_valid_key then 
-          M.cmd_t.str = M.cmd_t.str .. string.char(c)
-        end
-      end
-      if is_enter_key or M.is_hotkey(M.cmd_t.str) then
-        local cmd_str = M.cmd_t.str
-        local active_window = M.active_window
-        M.dbg_str = M.dbg_str .. "active=" .. active_window  .. "cmd_str='" .. cmd_str .. "'\n"
-        if M.all_windows[active_window].window_specific_commands[cmd_str] then
-          M.dbg_str = M.dbg_str .. "in\n"
-          local cmd_function = M.all_windows[active_window].window_specific_commands[cmd_str] 
-          cmd_function()
-        elseif M[M.cmd_t.str] then -- common text_box command 
-          M[M.cmd_t.str]()
-        end
-        M.cmd_t.str = ''
-      end
-      return true
-    end
-    return false
-  end
-
-
-  M.banner_struct = {mode = true}
-  function M.banner(c)
-    local is_enter_key = (c == 10)
-    local is_backspace_key  = (c == 8) or (c == 127)
-    local ch = is_valid_key and string.char(c) or ''
-    local ch_banner = ch
-    if is_enter_key then
-      ch_banner = '<cr>'
-    elseif is_backspace_key then
-      ch_banner = '<bs>'
-    end
-    local banner = ""
-    if M.cmd_t.mode then
-      banner = "cmd: " .. M.cmd_t.str
-    else
-      local maxx, maxy = M.getmaxyx()
-      banner = "Enter Ctrl-Q to quit, '" .. ch_banner  .. "' (" .. tostring(c)  ..  '), size= ' .. tostring(maxx) .. 'x' .. tostring(maxy)
-    end
-    return banner
   end
 
 

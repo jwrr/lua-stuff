@@ -19,72 +19,38 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-local curses  = require"curses"
-local stringx = require"pl.stringx"
-local textbox = require"textbox"
-local dirtree = require"textbox_dirtree"
-local editor  = require"textbox_editor"
+local stringx = require'pl.stringx'
+local textbox = require'textbox'
+local banner  = require'textbox_banner'
+local dirtree = require'textbox_dirtree'
+local editor  = require'textbox_editor'
 
-function filebrowser()
-  local stdscr = curses.initscr()
-
---   curses.cbreak()
-  curses.raw()
-  curses.echo(false)
-  curses.nl(true)
-  curses.keypad()
-
-  textbox.start_color()
-
-  textbox.new({name = 'banner',  height =  1, width = 137, starty =  0, startx =  0, hasborder = false, color_pair = textbox.black_on_white})
-  textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 35, hasborder = true,  color_pair = textbox.red_on_black })
-  dirtree.new({height = 40, width =  35, starty =  1, startx =  0, hasborder = true,  color_pair = textbox.black_on_white})
-  editor.new( {height = 30, width = 100, starty =  1, startx = 35, hasborder = true,  color_pair = textbox.white_on_black, active = true })
-
+function ide()
+  textbox.start()
+  banner.new({height =  1, width = 137, starty =  0, startx =  0, hasborder = false, color_pair = textbox.color.black_on_white})
+  dirtree.new({height = 40, width =  35, starty =  1, startx =  0, hasborder = true,  color_pair = textbox.color.black_on_white})
+  editor.new({height = 30, width = 100, starty =  1, startx = 35, hasborder = true,  color_pair = textbox.color.white_on_black, active = true })
+  textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 35, hasborder = true,  color_pair = textbox.color.magenta_on_black})
 
   local txt = ''
 
-  local c = stdscr:getch()
-  local banner ='Enter Ctrl-Q to quit'
-  local prev_maxy, prev_maxx = stdscr:getmaxyx()
-  local cnt = 0;
-  repeat
-    cnt = cnt + 1
-    textbox.print('status', textbox.dbg_str)
+  while not textbox.quit() do
+    textbox.resize_windows()
+    textbox.print('status', textbox.cmd.dbg_str)
+    dirtree.print()
+    banner.print()
+    editor.print(txt)
 
-    local file_tab = dirtree.lines("..")
-    textbox.print_lines('nav', file_tab)
-
-    textbox.print('banner', banner)
-    if not textbox.cmd_t.mode then
---    textbox.print('status', txt)
-      textbox.print('editor', txt)
-    end
-
-    local c = stdscr:getch()
-
-    local is_quit_key  = (c == 17)
-    local is_valid_key = (c <= 255)
-    local is_enter_key = (c == 10)
-    local is_backspace_key  = (c == 8) or (c == 127)
-    local ch = is_valid_key and string.char(c) or ''
-
-    if not textbox.cmd(c) then
-      if is_backspace_key then
+    if textbox.cmd.getch(textbox) then
+      if textbox.cmd.is_backspace_key then
         txt = txt:sub(1, -2)
-      else
-        txt = txt .. ch
+      elseif textbox.cmd.ch then
+        txt = txt .. textbox.cmd.ch
       end
     end
 
-    local maxy, maxx = textbox.resize_windows(stdscr)
-    banner = textbox.banner(c)
---       1         2         3         4         5         6                   8                   0                   2                   4
--- 4567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
-  until is_quit_key
+  end -- while
+end -- ide
 
-  curses.endwin()
-end
-
-xpcall(filebrowser, textbox.err)
+xpcall(ide, textbox.err)
 
