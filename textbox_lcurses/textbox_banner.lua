@@ -49,7 +49,7 @@ local M = {}
       banner_str = "cmd: " .. textbox.cmd.cmd_t.str
     else
       local stdscr = M.stdscr
-      local maxx, maxy = textbox.updatemaxyx(stdscr)
+      local maxx, maxy = textbox.getmaxyx(stdscr)
       banner_str = "Enter Ctrl-Q to quit, '" .. ch_banner  .. "' (" .. tostring(c)  ..  '), size= ' .. tostring(maxx) .. 'x' .. tostring(maxy)
     end
     return banner_str

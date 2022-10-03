@@ -35,7 +35,6 @@ function ide()
   local txt = ''
 
   while not textbox.quit() do
-    textbox.resize_windows()
     textbox.print('status', textbox.cmd.dbg_str)
     dirtree.print()
     banner.print()

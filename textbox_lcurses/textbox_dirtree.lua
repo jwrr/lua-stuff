@@ -21,14 +21,21 @@
 -- SOFTWARE.
 
 local M = {}
-
+  M.wname = "nav"
   M.current_line = 1;
 
   local lfs = require'lfs'
   local textbox = require'textbox'
 
-  function M.rpad(str, len)
-    return str .. string.rep(" ", len - #str)
+  function M.rpad(str, len, pad_ch)
+    pad_ch = pad_ch or ' '
+    return str .. string.rep(pad_ch, len - #str)
+  end
+
+
+  function M.lpad(str, len, pad_ch)
+    pad_ch = pad_ch or ' '
+    return string.rep(pad_ch, len) .. str
   end
 
 
@@ -81,10 +88,12 @@ local M = {}
     local files = M.getfiles(path, recursive, luapat_filter)
     local lines = {}
     if #files > 0 then
-      for _, f in ipairs(files) do
-        local indent = M.rpad("", 2*f.level)
+      for i,f in ipairs(files) do
+        local indent_ch = (i == M.current_line) and '=' or ' '
+        local indent = M.rpad('', 2*f.level, indent_ch) .. ' '
         local icon = f.isdir and 'v ' or ''
-        local line = indent .. icon .. f.name
+        local after = (i == M.current_line) and ' '..string.rep(indent_ch, 20) or ''
+        local line = indent .. icon .. f.name .. after .. '\n'
         lines[#lines+1] = line
       end
     end

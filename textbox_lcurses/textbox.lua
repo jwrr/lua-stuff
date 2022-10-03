@@ -52,6 +52,7 @@
       curses.endwin()
       return true
     end
+    M.resize_windows()
     return false
   end
 
@@ -67,13 +68,6 @@
   end
 
 
-  function M.updatemaxyx(stdscr)
---     local maxy, maxx = stdscr:getmaxyx()
---     M.setmaxyx(maxy, maxx)
-    return M.maxy, M.maxx
-  end
-
-
   function M.getmaxyx()
     return M.maxy, M.maxx
   end
@@ -82,6 +76,12 @@
   function M.rpad(str, len)
     return str .. string.rep(" ", len - #str)
   end
+  
+
+  function M.replace_char(pos, str, ch)
+    return str:sub(1, pos-1) .. ch .. str:sub(pos+1)
+  end
+
 
 
   function M.shallow_merge(t1, t2)
@@ -256,12 +256,12 @@
     local this = M.all_windows[name]
     local txt_width = this.txt_width - 1
     this.win:move(0,0)
-    for i,line in ipairs(lines) do
-      local line = stringx.rstrip(line, "\n\r")
-      local endl = (line ~= line)
+    for i,line1 in ipairs(lines) do
+      local line = stringx.rstrip(line1, "\n\r")
+      local has_eol = (line ~= line1)
+      local is_lastline = (i == #lines)
       line = stringx.shorten(line, txt_width)
-      local lastline = (i == #lines)
-      if endl or not lastline then
+      if has_eol or not is_lastline then
         line = line .. "\n"
       end
       this.win:addstr(line)

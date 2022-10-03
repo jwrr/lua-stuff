@@ -22,9 +22,26 @@
 
   local M = {}
 
+  local utils   = require'pl.utils'
   local textbox = require'textbox'
 
-  M.name = 'editor'
+  M.wname = 'editor'
+
+  function M.new(cfg)
+    cfg['name'] = M.wname
+    textbox.new(cfg)
+    M.register_functions(M.wname)
+  end
+
+  function M.print(txt)
+    txt = txt or ''
+    textbox.print(M.wname, txt)
+  end
+
+
+-- ==========================================================================
+-- ==========================================================================
+
 
   function M.open()
     local tmp_window = textbox.active_window
@@ -32,21 +49,22 @@
     textbox.refresh(tmp_window)
   end
 
+
+  function M.slurp(filename)
+    return utils.readlines(filename)
+  end
+
+
   function M.quit()
     textbox.quit(true)
   end
 
-  function M.new(cfg)
-    cfg['name'] = 'editor'
-    textbox.new(cfg)
-    textbox.cmd.register("editor", "open", M.open, "Open file for editing")
-    textbox.cmd.register("editor", "quit", M.quit, "Quit")
+
+  function M.register_functions(wname)
+    textbox.cmd.register(wname, 'open',  M.open, "Open file for editing")
+    textbox.cmd.register(wname, 'quit',  M.quit, "Quit")
   end
-  
-  function M.print(txt)
-    txt = txt or ''
-    textbox.print(M.name, txt)
-  end
+
 
 return M
 

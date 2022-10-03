@@ -27,6 +27,8 @@
   local utils   = require"pl.utils"
 
   M.all_windows = {}
+  M.history = {}
+  M.history_idx = 0;
   M.dbg_str="cmd_dbg\n"
 
   function M.register(wname, fname, func, description)
@@ -63,11 +65,17 @@
       end
       if is_enter_key or M.is_hotkey(M.cmd_t.str) then
         local cmd_str = M.cmd_t.str
+        if cmd_str == '' then
+          cmd_str = M.history[#M.history]
+        end
         M.dbg_str = M.dbg_str .. "active=" .. active_window  .. " cmd_str='" .. cmd_str .. "'\n"
+        M.all_windows[active_window] = M.all_windows[active_window] or {}
+        M.all_windows[active_window].window_specific_commands = M.all_windows[active_window].window_specific_commands or {}
         if M.all_windows[active_window].window_specific_commands[cmd_str] then
           local cmd_function = M.all_windows[active_window].window_specific_commands[cmd_str]
           M.dbg_str = M.dbg_str .. "in " .. active_window .. '.' .. cmd_str .. "\n"
           cmd_function()
+          M.history[#M.history+1] = cmd_str
         elseif M[M.cmd_t.str] then -- common text_box command
            M[M.cmd_t.str]()
         end
