@@ -24,7 +24,6 @@ local M = {}
   M.wname = "nav"
   M.current_line = 1;
 
-  local lfs = require'lfs'
   local textbox = require'textbox'
 
   function M.rpad(str, len, pad_ch)
@@ -50,12 +49,13 @@ local M = {}
     local f = {}
     f.fullname = filename
     f.parent, f.name = filename:match('(.*' .. sep .. ')(.*)')
-    f.mode = lfs.attributes(filename).mode
+    f.mode = textbox.lfs.attributes(filename).mode
     f.isdir = f.mode == 'directory'
     f.level = M.count(f.parent, '/') - 1
     return f
   end
 
+  M.filelist = {}
 
   function M.getfiles(dir, recursive, luapat_filter, filelist)
     recursive = recursive or false
@@ -63,7 +63,7 @@ local M = {}
     sep = sep or package.config:sub(1,1)
 
     filelist = filelist or {}	-- use provided list or create a new one
-    for filename in lfs.dir(dir) do
+    for filename in textbox.lfs.dir(dir) do
       if filename ~= "." and filename ~= ".." then
         local full_filename = dir .. sep .. filename
         local match = M.count(full_filename, luapat_filter) > 0
@@ -76,6 +76,7 @@ local M = {}
         end
       end
     end
+    M.filelist = filelist
     return filelist
   end
 
@@ -131,17 +132,24 @@ local M = {}
     textbox.new(cfg)
     M.register_functions(wname)
   end
-  
-  
+
+
 -- ======================================================
 -- ======================================================
 
-  function M.open(new_window)
-    new_window = new_window or 'editor'
+  function M.open(editor_window)
+    editor_window = editor_window or 'editor'
     local tmp_window = textbox.active_window
     textbox.active_window = 'editor'
-    textbox.refresh(new_window)
+    textbox.refresh(editor_window)
     textbox.refresh(tmp_window)
+
+    M.filelist[M.current_line] = M.filelist[M.current_line] or {}
+    if M.filelist[M.current_line] then
+      local filename = M.filelist[M.current_line].fullname
+      local lines = textbox.utils.readlines(filename)
+    end
+
   end
 
 

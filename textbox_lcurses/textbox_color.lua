@@ -20,13 +20,9 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-  local M = {}
-
+local M = {}
 
   local curses  = require'curses'
-  local stringx = require'pl.stringx'
-  local utils   = require'pl.utils'
-
 
   function M.htmlcolor(id, colorcode)
     if not curses.can_change_color() then return false end

@@ -22,7 +22,6 @@
 
   local M = {}
 
-  local utils   = require'pl.utils'
   local textbox = require'textbox'
 
   M.wname = 'editor'
@@ -47,11 +46,6 @@
     local tmp_window = textbox.active_window
     textbox.active_window = "nav"
     textbox.refresh(tmp_window)
-  end
-
-
-  function M.slurp(filename)
-    return utils.readlines(filename)
   end
 
 

@@ -20,14 +20,15 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-  local M = {}
-
+local M = {}
 
   local curses  = require'curses'
-  local stringx = require'pl.stringx'
-  local utils   = require'pl.utils'
-  M.cmd   = require'textbox_cmd'
-  M.color = require'textbox_color'
+  M.curses  = curses
+  M.lfs     = require'lfs'
+  M.stringx = require'pl.stringx'
+  M.utils   = require'pl.utils'
+  M.cmd     = require'textbox_cmd'
+  M.color   = require'textbox_color'
 
   M.all_windows = {}
   M.active_window = ''
@@ -195,18 +196,15 @@
     M.all_windows[name].id = #M.all_windows[name]
     M.all_windows[name].window_specific_commands = {}
     M.all_windows[name].window_specific_command_description = {}
-
     if this.active then
       M.active_window = name
     end
     if this.color_pair then
       M.color.set_color_pair(M, name, this.color_pair)
     end
-
     this.win:wbkgd(curses.color_pair(this.color_pair))
-
     if this.filename then
-      this.lines = utils.readlines(this.filename)
+      this.lines = M.utils.readlines(this.filename)
     end
 
   end
@@ -257,10 +255,10 @@
     local txt_width = this.txt_width - 1
     this.win:move(0,0)
     for i,line1 in ipairs(lines) do
-      local line = stringx.rstrip(line1, "\n\r")
+      local line = M.stringx.rstrip(line1, "\n\r")
       local has_eol = (line ~= line1)
       local is_lastline = (i == #lines)
-      line = stringx.shorten(line, txt_width)
+      line = M.stringx.shorten(line, txt_width)
       if has_eol or not is_lastline then
         line = line .. "\n"
       end
@@ -272,7 +270,7 @@
 
 
   function M.print(name, str, action)
-    M.print_lines(name, stringx.splitlines(str, true), action)
+    M.print_lines(name, M.stringx.splitlines(str, true), action)
   end
 
 
@@ -284,7 +282,6 @@
     print(debug.traceback(err, 2))
     os.exit(2)
   end
-
 
 return M
 

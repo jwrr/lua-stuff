@@ -22,10 +22,6 @@
 
   local M = {}
 
-  local curses  = require"curses"
-  local stringx = require"pl.stringx"
-  local utils   = require"pl.utils"
-
   M.all_windows = {}
   M.history = {}
   M.history_idx = 0;
@@ -47,24 +43,28 @@
     return false
   end
 
+  M.cmd_str  = ''
+  M.cmd_in_progress = false
 
-  M.cmd_t = M.cmd_t or {mode = false, str = ""}
   function M.cmd(active_window, c)
     local is_esc_key = (c == 27)
     local is_enter_key = (c == 10) or (c == 13)
+    local is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
     if is_esc_key then
-      M.cmd_t.mode = not M.cmd_t.mode
-      M.cmd_t.str = ''
+      M.cmd_in_progress = not M.cmd_in_progress
+      M.cmd_str = ''
       return true
-    elseif M.cmd_t.mode then
-      if not is_enter_key then
+    elseif M.cmd_in_progress then
+      if is_backspace_key then
+        M.cmd_str = M.cmd_str:sub(1, -2)
+      elseif not is_enter_key then
         local is_valid_key = (c <= 255)
-        if is_valid_key then
-          M.cmd_t.str = M.cmd_t.str .. string.char(c)
+        if is_valid_key and M.ch then
+          M.cmd_str = M.cmd_str .. M.ch
         end
       end
-      if is_enter_key or M.is_hotkey(M.cmd_t.str) then
-        local cmd_str = M.cmd_t.str
+      if is_enter_key or M.is_hotkey(M.cmd_str) then
+        local cmd_str = M.cmd_str
         if cmd_str == '' then
           cmd_str = M.history[#M.history]
         end
@@ -76,10 +76,10 @@
           M.dbg_str = M.dbg_str .. "in " .. active_window .. '.' .. cmd_str .. "\n"
           cmd_function()
           M.history[#M.history+1] = cmd_str
-        elseif M[M.cmd_t.str] then -- common text_box command
-           M[M.cmd_t.str]()
+        elseif M[M.cmd_str] then -- common text_box command
+           M[M.cmd_str]()
         end
-        M.cmd_t.str = ''
+        M.cmd_str = ''
       end
       return true
     end
