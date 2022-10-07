@@ -39,7 +39,7 @@ function ide()
     banner.print()
     editor.print(txt)
 
-    if textbox.cmd.getch(textbox) then
+    if textbox.cmd.getch() then
       if textbox.cmd.is_backspace_key then
         txt = txt:sub(1, -2)
       elseif textbox.cmd.ch then

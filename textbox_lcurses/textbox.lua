@@ -28,8 +28,10 @@ local M = {}
   M.stringx = require'pl.stringx'
   M.utils   = require'pl.utils'
   M.cmd     = require'textbox_cmd'
+  M.cmd.init(M)
   M.color   = require'textbox_color'
-
+  M.color.init(M)
+  
   M.all_windows = {}
   M.active_window = ''
   M.dbg_str = 'dbg\n'
@@ -154,7 +156,7 @@ local M = {}
       M.active_window = name
     end
     if this.color_pair then
-      M.color.set_color_pair(M, name, this.color_pair)
+      M.color.set_color_pair(name, this.color_pair)
     end
 
     this.win:wbkgd(curses.color_pair(this.color_pair))
@@ -200,7 +202,7 @@ local M = {}
       M.active_window = name
     end
     if this.color_pair then
-      M.color.set_color_pair(M, name, this.color_pair)
+      M.color.set_color_pair(name, this.color_pair)
     end
     this.win:wbkgd(curses.color_pair(this.color_pair))
     if this.filename then
@@ -231,9 +233,9 @@ local M = {}
       local box_name = name .. '_box'
       local color = M.white_on_black
       if M.active_window == name then
-        M.color.set_color_pair(M, box_name, M.color.red_on_black)
+        M.color.set_color_pair(box_name, M.color.red_on_black)
       else
-        M.color.set_color_pair(M, box_name, M.color.white_on_black)
+        M.color.set_color_pair(box_name, M.color.white_on_black)
       end
       M.all_windows[box_name].win:box(0, 0)
       M.all_windows[box_name].win:refresh()

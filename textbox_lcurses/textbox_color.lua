@@ -24,6 +24,10 @@ local M = {}
 
   local curses  = require'curses'
 
+  function M.init(textbox)
+    M.textbox = textbox
+  end
+
   function M.htmlcolor(id, colorcode)
     if not curses.can_change_color() then return false end
     local blue  = (colorcode & 0xff) * 1000 // 255
@@ -35,8 +39,8 @@ local M = {}
   end
 
 
-  function M.set_color_pair(textbox, name, color_pair)
-    textbox.all_windows[name].win:attron(curses.color_pair(color_pair))
+  function M.set_color_pair(name, color_pair)
+    M.textbox.all_windows[name].win:attron(curses.color_pair(color_pair))
   end
 
 

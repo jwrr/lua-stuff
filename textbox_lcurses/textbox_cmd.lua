@@ -27,6 +27,12 @@
   M.history_idx = 0;
   M.dbg_str="cmd_dbg\n"
 
+
+  function M.init(textbox)
+    M.textbox = textbox
+  end
+
+
   function M.register(wname, fname, func, description)
     description = description or ""
     M.all_windows[wname] = M.all_windows[wname] or {}
@@ -87,15 +93,15 @@
   end
 
 
-  function M.getch(textbox)
-    local c = textbox.getch()
+  function M.getch()
+    local c = M.textbox.getch()
     M.c = c
     M.is_quit_key  = (c == 17)
     M.is_valid_key = (c <= 255)
     M.is_enter_key = (c == 10)
     M.is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
     M.ch = M.is_valid_key and string.char(c) or ''
-    M.in_escape_sequence = M.cmd(textbox.active_window, c)
+    M.in_escape_sequence = M.cmd(M.textbox.active_window, c)
     return not M.in_escape_sequence
   end
 
