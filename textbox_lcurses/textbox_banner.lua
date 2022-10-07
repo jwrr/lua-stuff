@@ -45,7 +45,7 @@ local M = {}
       ch_banner = '<bs>'
     end
     local banner_str = ""
-    if textbox.cmd.cmd_in_progress then
+    if textbox.cmd.in_progress then
       banner_str = "cmd: " .. textbox.cmd.cmd_str
     else
       local stdscr = M.stdscr

@@ -20,12 +20,11 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-  local M = {}
+local M = {}
 
   M.all_windows = {}
   M.history = {}
   M.history_idx = 0;
-  M.dbg_str="cmd_dbg\n"
 
 
   function M.init(textbox)
@@ -41,7 +40,7 @@
 
     M.all_windows[wname].window_specific_commands[fname] = func
     M.all_windows[wname].window_specific_command_description[fname] = description
-    M.dbg_str = M.dbg_str .. "register: " .. wname .. " " .. fname .. "\n"
+    M.textbox.dbg.print("register: " .. wname .. " " .. fname)
   end
 
 
@@ -50,17 +49,17 @@
   end
 
   M.cmd_str  = ''
-  M.cmd_in_progress = false
+  M.in_progress = false
 
-  function M.cmd(active_window, c)
+  function M.handle_escape_sequence(active_window, c)
     local is_esc_key = (c == 27)
     local is_enter_key = (c == 10) or (c == 13)
     local is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
     if is_esc_key then
-      M.cmd_in_progress = not M.cmd_in_progress
+      M.in_progress = not M.in_progress
       M.cmd_str = ''
       return true
-    elseif M.cmd_in_progress then
+    elseif M.in_progress then
       if is_backspace_key then
         M.cmd_str = M.cmd_str:sub(1, -2)
       elseif not is_enter_key then
@@ -70,16 +69,16 @@
         end
       end
       if is_enter_key or M.is_hotkey(M.cmd_str) then
-        local cmd_str = M.cmd_str
+        local cmd_str = M.cmd_str or ''
         if cmd_str == '' then
-          cmd_str = M.history[#M.history]
+          cmd_str = M.history[#M.history] or ''
         end
-        M.dbg_str = M.dbg_str .. "active=" .. active_window  .. " cmd_str='" .. cmd_str .. "'\n"
+        M.textbox.dbg.print("active=" .. active_window  .. " cmd_str='" .. cmd_str)
         M.all_windows[active_window] = M.all_windows[active_window] or {}
         M.all_windows[active_window].window_specific_commands = M.all_windows[active_window].window_specific_commands or {}
         if M.all_windows[active_window].window_specific_commands[cmd_str] then
           local cmd_function = M.all_windows[active_window].window_specific_commands[cmd_str]
-          M.dbg_str = M.dbg_str .. "in " .. active_window .. '.' .. cmd_str .. "\n"
+          M.textbox.dbg.print("in " .. active_window .. '.' .. cmd_str)
           cmd_function()
           M.history[#M.history+1] = cmd_str
         elseif M[M.cmd_str] then -- common text_box command
@@ -94,14 +93,14 @@
 
 
   function M.getch()
-    local c = M.textbox.getch()
+    local c = M.textbox.stdscr:getch()
     M.c = c
     M.is_quit_key  = (c == 17)
     M.is_valid_key = (c <= 255)
     M.is_enter_key = (c == 10)
     M.is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
     M.ch = M.is_valid_key and string.char(c) or ''
-    M.in_escape_sequence = M.cmd(M.textbox.active_window, c)
+    M.in_escape_sequence = M.handle_escape_sequence(M.textbox.active_window, c)
     return not M.in_escape_sequence
   end
 

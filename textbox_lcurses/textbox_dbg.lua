@@ -20,45 +20,17 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-  local M = {}
-
-  local textbox = require'textbox'
-
-  M.wname = 'editor'
-
-  function M.new(cfg)
-    cfg['name'] = M.wname
-    textbox.new(cfg)
-    M.register_functions(M.wname)
+local M = {}
+  M.str = 'dbg\n'
+  
+  function M.print(str, no_cr)
+    no_cr = no_cr or false
+    M.str = M.str .. str
+    if not no_cr then
+      M.str = M.str .. '\n'
+    end
   end
-
-  function M.print(txt)
-    txt = txt or textbox.txt
-    textbox.print(M.wname, txt)
-  end
-
-
--- ==========================================================================
--- ==========================================================================
-
-
-  function M.open()
-    local tmp_window = textbox.active_window
-    textbox.active_window = "nav"
-    textbox.refresh(tmp_window)
-  end
-
-
-  function M.quit()
-    textbox.quit(true)
-  end
-
-
-  function M.register_functions(wname)
-    textbox.cmd.register(wname, 'open',  M.open, "Open file for editing")
-    textbox.cmd.register(wname, 'quit',  M.quit, "Quit")
-  end
-
 
 return M
+
 

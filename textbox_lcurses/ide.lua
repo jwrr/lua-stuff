@@ -24,31 +24,28 @@ local banner  = require'textbox_banner'
 local dirtree = require'textbox_dirtree'
 local editor  = require'textbox_editor'
 
-function ide()
+function init_screen()
   textbox.start()
   banner.new({height =  1, width = 137, starty =  0, startx =  0, hasborder = false, color_pair = textbox.color.black_on_white})
   dirtree.new({height = 40, width =  35, starty =  1, startx =  0, hasborder = true,  color_pair = textbox.color.black_on_white})
   editor.new({height = 30, width = 100, starty =  1, startx = 35, hasborder = true,  color_pair = textbox.color.white_on_black, active = true })
   textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 35, hasborder = true,  color_pair = textbox.color.magenta_on_black})
+  update_screen()
+end
 
-  local txt = ''
+function update_screen()
+  textbox.print('status', textbox.dbg.str)
+  dirtree.print()
+  banner.print()
+  editor.print()
+end
 
-  while not textbox.quit() do
-    textbox.print('status', textbox.cmd.dbg_str)
-    dirtree.print()
-    banner.print()
-    editor.print(txt)
-
-    if textbox.cmd.getch() then
-      if textbox.cmd.is_backspace_key then
-        txt = txt:sub(1, -2)
-      elseif textbox.cmd.ch then
-        txt = txt .. textbox.cmd.ch
-      end
-    end
-
-  end -- while
-end -- ide
+function ide()
+  init_screen()
+  while textbox.getchar() do
+    update_screen()
+  end
+end
 
 xpcall(ide, textbox.err)
 

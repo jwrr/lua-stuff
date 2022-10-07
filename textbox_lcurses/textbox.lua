@@ -27,6 +27,7 @@ local M = {}
   M.lfs     = require'lfs'
   M.stringx = require'pl.stringx'
   M.utils   = require'pl.utils'
+  M.dbg     = require"textbox_dbg"
   M.cmd     = require'textbox_cmd'
   M.cmd.init(M)
   M.color   = require'textbox_color'
@@ -45,23 +46,6 @@ local M = {}
     curses.keypad()
     M.color.start()
     return M.stdscr
-  end
-
-
-  function M.quit(force_quit)
-    force_quit = force_quit or false
-    M.force_quit = M.force_quit or force_quit
-    if M.cmd.is_quit_key or M.force_quit then
-      curses.endwin()
-      return true
-    end
-    M.resize_windows()
-    return false
-  end
-
-
-  function M.getch()
-    return M.stdscr:getch()
   end
 
 
@@ -273,6 +257,32 @@ local M = {}
 
   function M.print(name, str, action)
     M.print_lines(name, M.stringx.splitlines(str, true), action)
+  end
+
+
+  function M.quit(force_quit)
+    force_quit = force_quit or false
+    M.force_quit = M.force_quit or force_quit
+    if M.cmd.is_quit_key or M.force_quit then
+      curses.endwin()
+      return true
+    end
+    return false
+  end
+
+
+  M.txt = ''
+
+  function M.getchar()
+    if M.cmd.getch() then
+      if M.cmd.is_backspace_key then
+        M.txt = M.txt:sub(1, -2)
+      elseif M.cmd.ch then
+        M.txt = M.txt .. M.cmd.ch
+      end
+    end
+    M.resize_windows()
+    return not M.quit()
   end
 
 
