@@ -28,8 +28,8 @@ local M = {}
   M.stringx = require'pl.stringx'
   M.utils   = require'pl.utils'
   M.dbg     = require"textbox_dbg"
-  M.cmd     = require'textbox_cmd'
-  M.cmd.init(M)
+  M.input   = require'textbox_input'
+  M.input.init(M)
   M.color   = require'textbox_color'
   M.color.init(M)
   
@@ -263,7 +263,7 @@ local M = {}
   function M.quit(force_quit)
     force_quit = force_quit or false
     M.force_quit = M.force_quit or force_quit
-    if M.cmd.is_quit_key or M.force_quit then
+    if M.input.is_quit_key or M.force_quit then
       curses.endwin()
       return true
     end
@@ -274,11 +274,11 @@ local M = {}
   M.txt = ''
 
   function M.getchar()
-    if M.cmd.getch() then
-      if M.cmd.is_backspace_key then
+    if M.input.getch() then
+      if M.input.is_backspace_key then
         M.txt = M.txt:sub(1, -2)
-      elseif M.cmd.ch then
-        M.txt = M.txt .. M.cmd.ch
+      elseif M.input.ch then
+        M.txt = M.txt .. M.input.ch
       end
     end
     M.resize_windows()

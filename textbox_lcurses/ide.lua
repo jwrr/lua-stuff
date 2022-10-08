@@ -42,7 +42,7 @@ end
 
 function ide()
   init_screen()
-  while textbox.getchar() do
+  while editor.getchar() do
     update_screen()
   end
 end

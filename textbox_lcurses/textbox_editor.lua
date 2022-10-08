@@ -32,11 +32,41 @@
     M.register_functions(M.wname)
   end
 
+  M.txt = ''
+  M.lines = {}
+  M.linenumber = 1
+  M.column = 1
+
   function M.print(txt)
-    txt = txt or textbox.txt
+    txt = txt or M.txt
     textbox.print(M.wname, txt)
   end
 
+
+  function M.getchar()
+    local is_text = textbox.input.getch()
+    if is_text then
+      if textbox.input.is_backspace_key then
+        M.txt = M.txt:sub(1, -2)
+      elseif textbox.input.ch then -- ch should always exist...but just in case
+        M.lines[M.linenumber] = M.lines[M.linenumber] or ''
+        local line = M.lines[M.linenumber]
+        local append = #line < M.column
+        local insert = #line >= M.column
+        if append then
+          M.lines[M.linenumber] = line .. textbox.input.ch
+          M.column = M.column + #textbox.input.ch
+        elseif insert then
+          M.lines[M.linenumber] = line:sub(1,M.column) .. textbox.input.ch .. line:sub(M.column+1, #line)
+          M.column = M.column + #textbox.input.ch
+        end  
+        
+        M.txt = M.txt .. textbox.input.ch
+      end
+    end
+    textbox.resize_windows()
+    return not textbox.quit()
+  end
 
 -- ==========================================================================
 -- ==========================================================================
@@ -55,8 +85,8 @@
 
 
   function M.register_functions(wname)
-    textbox.cmd.register(wname, 'open',  M.open, "Open file for editing")
-    textbox.cmd.register(wname, 'quit',  M.quit, "Quit")
+    textbox.input.register(wname, 'open',  M.open, "Open file for editing")
+    textbox.input.register(wname, 'quit',  M.quit, "Quit")
   end
 
 

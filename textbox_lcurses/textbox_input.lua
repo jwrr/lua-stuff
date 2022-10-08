@@ -48,7 +48,7 @@ local M = {}
     return false
   end
 
-  M.cmd_str  = ''
+  M.escape_sequence  = ''
   M.in_progress = false
 
   function M.handle_escape_sequence(active_window, c)
@@ -57,34 +57,34 @@ local M = {}
     local is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
     if is_esc_key then
       M.in_progress = not M.in_progress
-      M.cmd_str = ''
+      M.escape_sequence = ''
       return true
     elseif M.in_progress then
       if is_backspace_key then
-        M.cmd_str = M.cmd_str:sub(1, -2)
+        M.escape_sequence = M.escape_sequence:sub(1, -2)
       elseif not is_enter_key then
         local is_valid_key = (c <= 255)
         if is_valid_key and M.ch then
-          M.cmd_str = M.cmd_str .. M.ch
+          M.escape_sequence = M.escape_sequence .. M.ch
         end
       end
-      if is_enter_key or M.is_hotkey(M.cmd_str) then
-        local cmd_str = M.cmd_str or ''
-        if cmd_str == '' then
-          cmd_str = M.history[#M.history] or ''
+      if is_enter_key or M.is_hotkey(M.escape_sequence) then
+        local escape_sequence = M.escape_sequence or ''
+        if escape_sequence == '' then
+          escape_sequence = M.history[#M.history] or ''
         end
-        M.textbox.dbg.print("active=" .. active_window  .. " cmd_str='" .. cmd_str)
+        M.textbox.dbg.print("active=" .. active_window  .. " escape_sequence='" .. escape_sequence)
         M.all_windows[active_window] = M.all_windows[active_window] or {}
         M.all_windows[active_window].window_specific_commands = M.all_windows[active_window].window_specific_commands or {}
-        if M.all_windows[active_window].window_specific_commands[cmd_str] then
-          local cmd_function = M.all_windows[active_window].window_specific_commands[cmd_str]
-          M.textbox.dbg.print("in " .. active_window .. '.' .. cmd_str)
-          cmd_function()
-          M.history[#M.history+1] = cmd_str
-        elseif M[M.cmd_str] then -- common text_box command
-           M[M.cmd_str]()
+        if M.all_windows[active_window].window_specific_commands[escape_sequence] then
+          local input_function = M.all_windows[active_window].window_specific_commands[escape_sequence]
+          M.textbox.dbg.print("in " .. active_window .. '.' .. escape_sequence)
+          input_function()
+          M.history[#M.history+1] = escape_sequence
+        elseif M[M.escape_sequence] then -- common text_box command
+           M[M.escape_sequence]()
         end
-        M.cmd_str = ''
+        M.escape_sequence = ''
       end
       return true
     end
