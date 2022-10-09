@@ -84,12 +84,39 @@
       M.column = 1
     end
   end
-  
+
+
+  function M.delete_lines(linenumber, n)
+    linenumber = linenumber or M.linenumber
+    n = n or 1
+    for i = linenumber+1, #M.lines-n  do
+      M.lines[i] = M.lines[i+n]
+    end
+    for i = #M.lines-n+1, #M.lines do
+      table.remove(M.lines)
+    end
+  end
+
+
+  function M.join_lines(linenumber)
+    textbox.dbg.print("Join ")
+    linenumber = linenumber or M.linenumber
+    if linenumber < #M.lines then
+       M.lines[linenumber] = M.lines[linenumber] .. M.lines[linenumber+1]
+       M.delete_lines(linenumber + 1, 1)
+    end
+  end
+
+
   function M.delete(n)
     local line = M.lines[M.linenumber] or ''
     local col = M.column
+    local removing_cr = col+n > #line+1
     line = line:sub(1, col-1) .. line:sub(col+n)
     M.lines[M.linenumber] = line
+    if removing_cr then
+      M.join_lines()
+    end
   end
 
 
