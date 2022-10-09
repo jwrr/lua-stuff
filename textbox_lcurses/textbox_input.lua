@@ -32,15 +32,27 @@ local M = {}
   end
 
 
-  function M.register(wname, fname, func, description)
+  function M.bind_seq(wname, seq, func, description)
     description = description or ""
     M.all_windows[wname] = M.all_windows[wname] or {}
     M.all_windows[wname].window_specific_commands = M.all_windows[wname].window_specific_commands or {}
     M.all_windows[wname].window_specific_command_description = M.all_windows[wname].window_specific_command_description or {}
 
-    M.all_windows[wname].window_specific_commands[fname] = func
-    M.all_windows[wname].window_specific_command_description[fname] = description
-    M.textbox.dbg.print("register: " .. wname .. " " .. fname)
+    M.all_windows[wname].window_specific_commands[seq] = func
+    M.all_windows[wname].window_specific_command_description[seq] = description
+    M.textbox.dbg.print("bind_seq: " .. wname .. " " .. seq)
+  end
+
+
+  function M.bind_key(wname, key, func, description)
+    description = description or ""
+    M.all_windows[wname] = M.all_windows[wname] or {}
+    M.all_windows[wname].window_specific_commands = M.all_windows[wname].window_specific_commands or {}
+    M.all_windows[wname].window_specific_command_description = M.all_windows[wname].window_specific_command_description or {}
+
+    M.all_windows[wname].window_specific_commands[key] = func
+    M.all_windows[wname].window_specific_command_description[key] = description
+    M.textbox.dbg.print("bind_key: " .. wname .. " " .. key)
   end
 
 
@@ -102,6 +114,15 @@ local M = {}
     M.ch = M.is_valid_key and string.char(c) or ''
     M.in_escape_sequence = M.handle_escape_sequence(M.textbox.active_window, c)
     return not M.in_escape_sequence
+  end
+
+
+  function M.keystroke_exists(c)
+    return false
+  end
+
+  
+  function M.run(c)
   end
 
 return M

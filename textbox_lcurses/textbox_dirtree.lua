@@ -164,9 +164,9 @@ local M = {}
 
 
   function M.register_functions(wname)
-    textbox.input.register(wname, 'open', M.open, "Open selected file")
-    textbox.input.register(wname, 'up',   M.up,   "Scroll up to previous file")
-    textbox.input.register(wname, 'down', M.down, "Scroll down to next file")
+    textbox.input.bind_seq(wname, 'open', M.open, "Open selected file")
+    textbox.input.bind_seq(wname, 'up',   M.up,   "Scroll up to previous file")
+    textbox.input.bind_seq(wname, 'down', M.down, "Scroll down to next file")
   end
 
 -- ==================================================================
