@@ -235,8 +235,9 @@ local M = {}
   end
 
 
-  function M.print_lines(name, lines, action)
-    action = action or 'init' -- 'init', 'insert'
+  function M.print_lines(name, lines, no_refresh)
+    no_refresh = no_refresh or false
+    local refresh = not no_refresh
     local this = M.all_windows[name]
     local txt_width = this.txt_width - 1
     this.win:move(0,0)
@@ -251,7 +252,15 @@ local M = {}
       this.win:addstr(line)
     end
     this.win:clrtobot()
-    M.refresh(name)
+    if refresh then
+      M.refresh(name)
+    end
+  end
+  
+  
+  function M.moveto(name, y, x)
+    local this = M.all_windows[name]
+    this.win:move(y, x)
   end
 
 

@@ -36,31 +36,87 @@
   M.lines = {}
   M.linenumber = 1
   M.column = 1
+  M.insert_mode = true -- overwrite = false
+
+
+  function M.min(a, b)
+    return (a < b) and a or b
+  end
+
 
   function M.print(txt)
     txt = txt or M.txt
-    textbox.print(M.wname, txt)
+    textbox.print_lines(M.wname, M.lines, true)
+    M.column = M.column or 1
+    M.lines[M.linenumber] = M.lines[M.linenumber] or ''
+    local x = M.min(M.column, #M.lines[M.linenumber]+1) - 1
+    local y = M.linenumber - 1
+    textbox.moveto(M.wname, y, x)
+    textbox.refresh(M.wname)
   end
 
+
+  function M.trim_cr(str)
+    str = str or ''
+    local ends_with_cr = str:sub(#str) == '\n'
+    if ends_with_cr then
+      str = str:sub(1, #str-1)
+    end
+    return str
+  end
+
+
+  function M.insert_string(str)
+    local str2 = M.trim_cr(str)
+    local ends_with_cr = #str2 ~= #str
+    local line = M.lines[M.linenumber] or ''
+    local col = M.column
+    line = line:sub(1, col-1) .. str2 .. line:sub(col, #line)
+    M.column = col + #str2
+    M.lines[M.linenumber] = line
+    if ends_with_cr then
+      M.linenumber = M.linenumber + 1
+      M.column = 1
+    end
+  end
+
+
+  function M.overwrite_string(str)
+  end
+
+  M.KEY_DOWN_ARROW  = 258
+  M.KEY_UP_ARROW    = 259
+  M.KEY_LEFT_ARROW  = 260
+  M.KEY_RIGHT_ARROW = 261
 
   function M.getchar()
     local is_text = textbox.input.getch()
     if is_text then
+      local c = textbox.input.c
       if textbox.input.is_backspace_key then
         M.txt = M.txt:sub(1, -2)
+      elseif c == M.KEY_LEFT_ARROW then
+        if M.column > 1 then
+          M.column = M.column - 1
+        end
+      elseif c == M.KEY_RIGHT_ARROW then
+        if M.column <= #M.lines[M.linenumber] then
+          M.column = M.column + 1
+        end
+      elseif c == M.KEY_UP_ARROW then
+        if M.linenumber > 1 then
+          M.linenumber = M.linenumber - 1
+        end
+      elseif c == M.KEY_DOWN_ARROW then
+        if M.linenumber <= #M.lines then
+          M.linenumber = M.linenumber + 1
+        end
       elseif textbox.input.ch then -- ch should always exist...but just in case
-        M.lines[M.linenumber] = M.lines[M.linenumber] or ''
-        local line = M.lines[M.linenumber]
-        local append = #line < M.column
-        local insert = #line >= M.column
-        if append then
-          M.lines[M.linenumber] = line .. textbox.input.ch
-          M.column = M.column + #textbox.input.ch
-        elseif insert then
-          M.lines[M.linenumber] = line:sub(1,M.column) .. textbox.input.ch .. line:sub(M.column+1, #line)
-          M.column = M.column + #textbox.input.ch
-        end  
-        
+        if M.insert_mode then
+          M.insert_string(textbox.input.ch)
+        else
+          M.overwrite_string(textbox.input.ch)
+        end
         M.txt = M.txt .. textbox.input.ch
       end
     end
