@@ -30,20 +30,21 @@ function init_screen()
   dirtree.new({height = 40, width =  35, starty =  1, startx =  0, hasborder = true,  color_pair = textbox.color.black_on_white})
   editor.new({height = 30, width = 100, starty =  1, startx = 35, hasborder = true,  color_pair = textbox.color.white_on_black, active = true })
   textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 35, hasborder = true,  color_pair = textbox.color.magenta_on_black})
-  update_screen()
+  update_screen(true)
 end
 
-function update_screen()
-  textbox.print('status', textbox.dbg.str)
-  dirtree.print()
+function update_screen(force)
+  force = force or false
   banner.print()
-  editor.print()
+  textbox.print('status', textbox.dbg.str)
+  dirtree.print(force)
+  editor.print(force)
 end
 
 function ide()
   init_screen()
   while editor.getchar() do
-    update_screen()
+    update_screen(true)
   end
 end
 

@@ -84,6 +84,13 @@
       M.column = 1
     end
   end
+  
+  function M.delete(n)
+    local line = M.lines[M.linenumber] or ''
+    local col = M.column
+    line = line:sub(1, col-1) .. line:sub(col+n)
+    M.lines[M.linenumber] = line
+  end
 
 
   function M.overwrite_string(str)
@@ -96,8 +103,6 @@
       local c = textbox.input.c
       if textbox.input.keystroke_exists(c) then
         textbox.input.run(c)
-      elseif textbox.input.is_backspace_key then
-        M.txt = M.txt:sub(1, -2)
       elseif c == M.KEY_LEFT_ARROW then
         M.movex(-1)
       elseif c == M.KEY_RIGHT_ARROW then
@@ -106,6 +111,14 @@
         M.movey(-1)
       elseif c == M.KEY_DOWN_ARROW then
         M.movey(1)
+      elseif c == M.KEY_DELETE then
+        textbox.dbg.print("del ")
+        M.delete(1)
+      elseif c == M.KEY_BACKSPACE then
+--        M.txt = M.txt:sub(1, -2)
+        if M.movex(-1) then
+          M.delete(1)
+        end
       elseif textbox.input.ch then -- ch should always exist...but just in case
         if M.insert_mode then
           M.insert_string(textbox.input.ch)
@@ -124,25 +137,29 @@
 
   function M.movex(delta_x)
     delta_x = delta_x or 0
+    local col1 = M.column
     if delta_x ~= 0 then
-      textbox.dbg.print("movex(" .. tostring(delta_x) ..   ")")
       local colmax = #M.lines[M.linenumber] + 1
       local col = M.min(M.column, colmax)
       col = col + delta_x
       col = M.max(col, 1)
       M.column = M.min(col, colmax)
     end
+    local success = M.column ~= col1
+    return success
   end
 
 
   function M.movey(delta_y)
     delta_y = delta_y or 0
+    local ln1 = M.linenumber
     if delta_y ~= 0 then
-      textbox.dbg.print("movey(" .. tostring(delta_y) .. ")")
       local ln = M.linenumber + delta_y
       ln = M.max(ln, 1)
       M.linenumber = M.min(ln, #M.lines)
     end
+    local success = M.linenumber ~= ln1
+    return success
   end
 
   function M.open()
@@ -161,7 +178,8 @@
   M.KEY_UP_ARROW    = 259
   M.KEY_LEFT_ARROW  = 260
   M.KEY_RIGHT_ARROW = 261
-
+  M.KEY_BACKSPACE   = 263
+  M.KEY_DELETE      = 330
 
   M.down  = function() M.movey(-1) end
   M.up    = function() M.movey(1) end

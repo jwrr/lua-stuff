@@ -120,9 +120,15 @@ local M = {}
   end
 
 
-  function M.print()
-    local files = M.lines("..")
-    textbox.print_lines('nav', files)
+  function M.print(force)
+    force = force or false
+    if force or textbox.active_window == M.wname then
+      local files = M.lines("..")
+      textbox.print_lines('nav', files)
+      return true
+    else
+      return false
+    end
   end
 
 
