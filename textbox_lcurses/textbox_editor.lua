@@ -71,7 +71,11 @@
   end
 
 
-  function M.insert_string(str)
+  function M.overwrite(str)
+  end
+
+
+  function M.insert(str)
     local str2 = M.trim_cr(str)
     local ends_with_cr = #str2 ~= #str
     local line = M.lines[M.linenumber] or ''
@@ -109,6 +113,7 @@
 
 
   function M.delete(n)
+    n = n or 1
     local line = M.lines[M.linenumber] or ''
     local col = M.column
     local removing_cr = col+n > #line+1
@@ -117,10 +122,6 @@
     if removing_cr then
       M.join_lines()
     end
-  end
-
-
-  function M.overwrite_string(str)
   end
 
 
@@ -148,9 +149,9 @@
         end
       elseif textbox.input.ch then -- ch should always exist...but just in case
         if M.insert_mode then
-          M.insert_string(textbox.input.ch)
+          M.insert(textbox.input.ch)
         else
-          M.overwrite_string(textbox.input.ch)
+          M.overwrite(textbox.input.ch)
         end
         M.txt = M.txt .. textbox.input.ch
       end
@@ -161,21 +162,6 @@
 
 -- ==========================================================================
 -- ==========================================================================
-
-  function M.movex(delta_x)
-    delta_x = delta_x or 0
-    local col1 = M.column
-    if delta_x ~= 0 then
-      local colmax = #M.lines[M.linenumber] + 1
-      local col = M.min(M.column, colmax)
-      col = col + delta_x
-      col = M.max(col, 1)
-      M.column = M.min(col, colmax)
-    end
-    local success = M.column ~= col1
-    return success
-  end
-
 
   function M.movey(delta_y)
     delta_y = delta_y or 0
@@ -188,6 +174,38 @@
     local success = M.linenumber ~= ln1
     return success
   end
+
+
+  function M.colmax(linenumber)
+    linenumber = linenumber or M.linenumber
+    return #M.lines[M.linenumber] + 1
+  end
+
+
+  function M.movex(delta_x)
+    delta_x = delta_x or 0
+    if delta_x == 0 then return  end
+    local col1 = M.column
+    local ln1 = M.linenumber
+    local col = M.min(M.column, M.colmax())
+    col = col + delta_x
+    if delta_x < 0 then
+      while (col < 1) and M.movey(-1) do
+        col = M.colmax() + col -- col is negative
+      end
+    else
+      local colmax = M.colmax()
+      while (col > colmax) and M.movey(1) do
+        col = colmax - col
+        colmax = M.colmax()
+      end
+    end
+    col = M.max(col, 1)
+    M.column = M.min(col, M.colmax())
+    local success = (M.column ~= col1) or (M.linenumber ~= ln1)
+    return success
+  end
+
 
   function M.open()
     local tmp_window = textbox.active_window
