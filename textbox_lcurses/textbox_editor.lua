@@ -77,14 +77,17 @@
 
   function M.insert(str)
     local str2 = M.trim_cr(str)
-    local ends_with_cr = #str2 ~= #str
+    local new_str_ends_with_cr = #str2 ~= #str
     local line = M.lines[M.linenumber] or ''
     local col = M.column
     line = line:sub(1, col-1) .. str2 .. line:sub(col, #line)
     M.column = col + #str2
     M.lines[M.linenumber] = line
-    if ends_with_cr then
+    if new_str_ends_with_cr then
+      textbox.dbg.print("<cr> ")
+      M.lines[M.linenumber] = line:sub(1, M.column-1)
       M.linenumber = M.linenumber + 1
+      table.insert(M.lines, M.linenumber, line:sub(M.column))
       M.column = 1
     end
   end
@@ -93,7 +96,7 @@
   function M.delete_lines(linenumber, n)
     linenumber = linenumber or M.linenumber
     n = n or 1
-    for i = linenumber+1, #M.lines-n  do
+    for i = linenumber, #M.lines-n  do
       M.lines[i] = M.lines[i+n]
     end
     for i = #M.lines-n+1, #M.lines do
@@ -103,7 +106,6 @@
 
 
   function M.join_lines(linenumber)
-    textbox.dbg.print("Join ")
     linenumber = linenumber or M.linenumber
     if linenumber < #M.lines then
        M.lines[linenumber] = M.lines[linenumber] .. M.lines[linenumber+1]
@@ -140,14 +142,13 @@
       elseif c == M.KEY_DOWN_ARROW then
         M.movey(1)
       elseif c == M.KEY_DELETE then
-        textbox.dbg.print("del ")
         M.delete(1)
       elseif c == M.KEY_BACKSPACE then
 --        M.txt = M.txt:sub(1, -2)
         if M.movex(-1) then
           M.delete(1)
         end
-      elseif textbox.input.ch then -- ch should always exist...but just in case
+      elseif textbox.input.ch then
         if M.insert_mode then
           M.insert(textbox.input.ch)
         else
