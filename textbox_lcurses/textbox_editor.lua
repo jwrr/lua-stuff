@@ -37,7 +37,30 @@
   M.linenumber = 1
   M.column = 1
   M.insert_mode = true -- overwrite = false
+  M.filename = "text.txt"
 
+  function M.save_table(filename, lines)
+    filename = filename or M.filename
+    local lines = lines or M.lines
+    local f = io.open(filename, 'w')
+    for _,line in ipairs(lines) do
+      f:write(line .. '\n')
+    end
+    f:close()
+  end
+  
+  function M.read_table(filename)
+--     textbox.dbg.print("read")
+    filename = filename or M.filename
+    local lines = {}
+    for line in io.lines(filename) do
+      table.insert(lines, line)
+    end
+    M.lines = lines
+    M.linenumber = 1
+    M.column = 1
+  end
+  
 
   function M.min(a, b)
     return (a < b) and a or b
@@ -84,7 +107,6 @@
     M.column = col + #str2
     M.lines[M.linenumber] = line
     if new_str_ends_with_cr then
-      textbox.dbg.print("<cr> ")
       M.lines[M.linenumber] = line:sub(1, M.column-1)
       M.linenumber = M.linenumber + 1
       table.insert(M.lines, M.linenumber, line:sub(M.column))
@@ -148,6 +170,10 @@
         if M.movex(-1) then
           M.delete(1)
         end
+      elseif c == M.KEY_CTRL_O then
+        M.read_table()
+      elseif c == M.KEY_CTRL_S then
+        M.save_table()
       elseif textbox.input.ch then
         if M.insert_mode then
           M.insert(textbox.input.ch)
@@ -226,11 +252,15 @@
   M.KEY_RIGHT_ARROW = 261
   M.KEY_BACKSPACE   = 263
   M.KEY_DELETE      = 330
+  M.KEY_CTRL_O      = 15  -- opqrs
+  M.KEY_CTRL_S      = 19
 
   M.down  = function() M.movey(-1) end
   M.up    = function() M.movey(1) end
   M.left  = function() M.movex(-1) end
   M.right = function() M.movex(1) end
+  M.open  = function() M.read_table() end
+  M.save  = function() M.save_table() end
 
   function M.register_functions(wname)
     textbox.input.bind_seq(wname, 'open',  M.open, "Open file for editing")
@@ -239,6 +269,8 @@
     textbox.input.bind_key(wname, M.KEY_UP_ARROW,     M.up,    "Move up")
     textbox.input.bind_key(wname, M.KEY_LEFT_ARROW,   M.left,  "Move left")
     textbox.input.bind_key(wname, M.KEY_RIGHT_ARROW,  M.right, "Move right")
+    textbox.input.bind_key(wname, M.KEY_CTRL_O,       M.open,  "Open file")
+    textbox.input.bind_key(wname, M.KEY_CTRL_S,       M.save,  "Save file")
   end
 
 return M
