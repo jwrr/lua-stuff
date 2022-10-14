@@ -169,10 +169,17 @@ local M = {}
   end
 
 
+  M.KEY_ENTER       =  10
+  M.KEY_DOWN_ARROW  = 258
+  M.KEY_UP_ARROW    = 259
+
   function M.register_functions(wname)
     textbox.input.bind_seq(wname, 'open', M.open, "Open selected file")
     textbox.input.bind_seq(wname, 'up',   M.up,   "Scroll up to previous file")
     textbox.input.bind_seq(wname, 'down', M.down, "Scroll down to next file")
+    textbox.input.bind_key(wname, M.KEY_ENTER,        M.open,  "Move down")
+    textbox.input.bind_key(wname, M.KEY_DOWN_ARROW,   M.down,  "Move down")
+    textbox.input.bind_key(wname, M.KEY_UP_ARROW,     M.up,    "Move up")
   end
 
 -- ==================================================================

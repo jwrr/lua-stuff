@@ -63,6 +63,7 @@ local M = {}
   M.escape_sequence  = ''
   M.in_progress = false
 
+
   function M.handle_escape_sequence(active_window, c)
     local is_esc_key = (c == 27)
     local is_enter_key = (c == 10) or (c == 13)
@@ -104,6 +105,25 @@ local M = {}
   end
 
 
+  function M.handle_cmdkey(active_window, c)
+    local is_esc_key = (c == 27)
+    local is_enter_key = (c == 10) or (c == 13)
+    local is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
+
+    M.textbox.dbg.print("active=" .. active_window  .. " cmd_key='" .. tostring(c))
+    M.all_windows[active_window] = M.all_windows[active_window] or {}
+    M.all_windows[active_window].window_specific_commands = M.all_windows[active_window].window_specific_commands or {}
+    if M.all_windows[active_window].window_specific_commands[c] then
+      local input_function = M.all_windows[active_window].window_specific_commands[c]
+      M.textbox.dbg.print("in " .. active_window .. '.' .. c)
+      input_function()
+      M.history[#M.history+1] = c
+      return true
+    end
+    return false
+  end
+
+
   function M.getch()
     local c = M.textbox.stdscr:getch()
     M.c = c
@@ -113,7 +133,10 @@ local M = {}
     M.is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
     M.ch = M.is_valid_key and string.char(c) or ''
     M.in_escape_sequence = M.handle_escape_sequence(M.textbox.active_window, c)
-    return not M.in_escape_sequence
+    if not M.in_escape_sequence then
+      M.is_cmdkey = M.handle_cmdkey(M.textbox.active_window, c)
+    end
+    return not M.in_escape_sequence and not M.is_cmdkey
   end
 
 

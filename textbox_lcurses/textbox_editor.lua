@@ -234,10 +234,13 @@
   end
 
 
-  function M.open()
-    local tmp_window = textbox.active_window
-    textbox.active_window = "nav"
-    textbox.refresh(tmp_window)
+  function M.open_file(filename)
+    filename = filename or ''
+    if filename == '' then
+      local tmp_window = textbox.active_window
+      textbox.active_window = "nav"
+      textbox.refresh(tmp_window)
+    end
   end
 
 
@@ -263,7 +266,7 @@
   M.save  = function() M.save_table() end
 
   function M.register_functions(wname)
-    textbox.input.bind_seq(wname, 'open',  M.open, "Open file for editing")
+    textbox.input.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
     textbox.input.bind_seq(wname, 'quit',  M.quit, "Quit")
     textbox.input.bind_key(wname, M.KEY_DOWN_ARROW,   M.down,  "Move down")
     textbox.input.bind_key(wname, M.KEY_UP_ARROW,     M.up,    "Move up")
