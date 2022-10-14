@@ -34,6 +34,7 @@ function init_screen()
 end
 
 function update_screen(force)
+  textbox.resize_windows()
   force = force or false
   banner.print()
   textbox.print('status', textbox.dbg.str)

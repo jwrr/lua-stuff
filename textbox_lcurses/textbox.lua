@@ -36,7 +36,7 @@ local M = {}
   M.all_windows = {}
   M.active_window = ''
   M.dbg_str = 'dbg\n'
-  
+
 
   function M.start()
     M.stdscr = curses.initscr()

@@ -149,13 +149,13 @@ local M = {}
     textbox.active_window = 'editor'
     textbox.refresh(editor_window)
     textbox.refresh(tmp_window)
-
+    
     M.filelist[M.current_line] = M.filelist[M.current_line] or {}
     if M.filelist[M.current_line] then
       local filename = M.filelist[M.current_line].fullname
-      local lines = textbox.utils.readlines(filename)
+      textbox.dbg.print('filename=' ..  filename)
+      textbox.filename = filename
     end
-
   end
 
 
@@ -168,18 +168,14 @@ local M = {}
     M.current_line = M.current_line + 1
   end
 
-
-  M.KEY_ENTER       =  10
-  M.KEY_DOWN_ARROW  = 258
-  M.KEY_UP_ARROW    = 259
-
   function M.register_functions(wname)
-    textbox.input.bind_seq(wname, 'open', M.open, "Open selected file")
-    textbox.input.bind_seq(wname, 'up',   M.up,   "Scroll up to previous file")
-    textbox.input.bind_seq(wname, 'down', M.down, "Scroll down to next file")
-    textbox.input.bind_key(wname, M.KEY_ENTER,        M.open,  "Move down")
-    textbox.input.bind_key(wname, M.KEY_DOWN_ARROW,   M.down,  "Move down")
-    textbox.input.bind_key(wname, M.KEY_UP_ARROW,     M.up,    "Move up")
+    local tbi = textbox.input
+    tbi.bind_seq(wname, 'open',               M.open, "Open selected file")
+    tbi.bind_seq(wname, 'down',               M.down, "Scroll up to previous file")
+    tbi.bind_seq(wname, 'up',                 M.up,   "Scroll up to previous file")
+    tbi.bind_key(wname, tbi.KEY_ENTER,        M.open,  "Select file and open")
+    tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,  "Move down")
+    tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,    "Move up")
   end
 
 -- ==================================================================

@@ -30,7 +30,11 @@ local M = {}
       M.str = M.str .. '\n'
     end
   end
-
+  
+  function M.clear_print(str, no_cr)
+    M.str = ""
+    M.print(str, no_cr)
+  end
 return M
 
 

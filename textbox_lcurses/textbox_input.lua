@@ -22,6 +22,16 @@
 
 local M = {}
 
+  M.KEY_ENTER       =  10
+  M.KEY_DOWN_ARROW  = 258
+  M.KEY_UP_ARROW    = 259
+  M.KEY_LEFT_ARROW  = 260
+  M.KEY_RIGHT_ARROW = 261
+  M.KEY_BACKSPACE   = 263
+  M.KEY_DELETE      = 330
+  M.KEY_CTRL_O      = 15
+  M.KEY_CTRL_S      = 19
+
   M.all_windows = {}
   M.history = {}
   M.history_idx = 0;
@@ -86,7 +96,7 @@ local M = {}
         if escape_sequence == '' then
           escape_sequence = M.history[#M.history] or ''
         end
-        M.textbox.dbg.print("active=" .. active_window  .. " escape_sequence='" .. escape_sequence)
+        M.textbox.dbg.clear_print("active=" .. active_window  .. " escape_sequence='" .. escape_sequence)
         M.all_windows[active_window] = M.all_windows[active_window] or {}
         M.all_windows[active_window].window_specific_commands = M.all_windows[active_window].window_specific_commands or {}
         if M.all_windows[active_window].window_specific_commands[escape_sequence] then
@@ -110,7 +120,7 @@ local M = {}
     local is_enter_key = (c == 10) or (c == 13)
     local is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
 
-    M.textbox.dbg.print("active=" .. active_window  .. " cmd_key='" .. tostring(c))
+    M.textbox.dbg.clear_print("active=" .. active_window  .. " cmd_key='" .. tostring(c))
     M.all_windows[active_window] = M.all_windows[active_window] or {}
     M.all_windows[active_window].window_specific_commands = M.all_windows[active_window].window_specific_commands or {}
     if M.all_windows[active_window].window_specific_commands[c] then
@@ -137,15 +147,6 @@ local M = {}
       M.is_cmdkey = M.handle_cmdkey(M.textbox.active_window, c)
     end
     return not M.in_escape_sequence and not M.is_cmdkey
-  end
-
-
-  function M.keystroke_exists(c)
-    return false
-  end
-
-  
-  function M.run(c)
   end
 
 return M

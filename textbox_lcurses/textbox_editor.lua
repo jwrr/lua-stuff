@@ -32,14 +32,14 @@
     M.register_functions(M.wname)
   end
 
-  M.txt = ''
   M.lines = {}
   M.linenumber = 1
   M.column = 1
   M.insert_mode = true -- overwrite = false
   M.filename = "text.txt"
 
-  function M.save_table(filename, lines)
+
+  function M.save_file_from_table(filename, lines)
     filename = filename or M.filename
     local lines = lines or M.lines
     local f = io.open(filename, 'w')
@@ -49,9 +49,11 @@
     f:close()
   end
   
-  function M.read_table(filename)
---     textbox.dbg.print("read")
-    filename = filename or M.filename
+  function M.read_file_into_table(filename)
+    filename = filename or textbox.filename
+    M.filename = filename
+    textbox.dbg.print('filename=' ..  filename)
+
     local lines = {}
     for line in io.lines(filename) do
       table.insert(lines, line)
@@ -72,8 +74,7 @@
   end
 
 
-  function M.print(txt)
-    txt = txt or M.txt
+  function M.print()
     textbox.print_lines(M.wname, M.lines, true)
     M.column = M.column or 1
     M.lines[M.linenumber] = M.lines[M.linenumber] or ''
@@ -115,6 +116,16 @@
   end
 
 
+  function M.enter_text(str)
+    str = str or textbox.input.ch or ''
+    if M.insert_mode then
+      M.insert(str)
+    else
+      M.overwrite(str)
+    end
+  end
+
+
   function M.delete_lines(linenumber, n)
     linenumber = linenumber or M.linenumber
     n = n or 1
@@ -136,7 +147,7 @@
   end
 
 
-  function M.delete(n)
+  function M.delete_char(n)
     n = n or 1
     local line = M.lines[M.linenumber] or ''
     local col = M.column
@@ -152,38 +163,8 @@
   function M.getchar()
     local is_text = textbox.input.getch()
     if is_text then
-      local c = textbox.input.c
-      if textbox.input.keystroke_exists(c) then
-        textbox.input.run(c)
-      elseif c == M.KEY_LEFT_ARROW then
-        M.movex(-1)
-      elseif c == M.KEY_RIGHT_ARROW then
-        M.movex(1)
-      elseif c == M.KEY_UP_ARROW then
-        M.movey(-1)
-      elseif c == M.KEY_DOWN_ARROW then
-        M.movey(1)
-      elseif c == M.KEY_DELETE then
-        M.delete(1)
-      elseif c == M.KEY_BACKSPACE then
---        M.txt = M.txt:sub(1, -2)
-        if M.movex(-1) then
-          M.delete(1)
-        end
-      elseif c == M.KEY_CTRL_O then
-        M.read_table()
-      elseif c == M.KEY_CTRL_S then
-        M.save_table()
-      elseif textbox.input.ch then
-        if M.insert_mode then
-          M.insert(textbox.input.ch)
-        else
-          M.overwrite(textbox.input.ch)
-        end
-        M.txt = M.txt .. textbox.input.ch
-      end
+      M.enter_text()
     end
-    textbox.resize_windows()
     return not textbox.quit()
   end
 
@@ -235,11 +216,13 @@
 
 
   function M.open_file(filename)
-    filename = filename or ''
-    if filename == '' then
+    textbox.filename = filename or textbox.filename or ''
+    if textbox.filename == '' then
       local tmp_window = textbox.active_window
       textbox.active_window = "nav"
       textbox.refresh(tmp_window)
+    else
+      textbox.read_file_into_table(textbox.filename)
     end
   end
 
@@ -249,31 +232,28 @@
   end
 
 
-  M.KEY_DOWN_ARROW  = 258
-  M.KEY_UP_ARROW    = 259
-  M.KEY_LEFT_ARROW  = 260
-  M.KEY_RIGHT_ARROW = 261
-  M.KEY_BACKSPACE   = 263
-  M.KEY_DELETE      = 330
-  M.KEY_CTRL_O      = 15  -- opqrs
-  M.KEY_CTRL_S      = 19
 
-  M.down  = function() M.movey(-1) end
-  M.up    = function() M.movey(1) end
-  M.left  = function() M.movex(-1) end
-  M.right = function() M.movex(1) end
-  M.open  = function() M.read_table() end
-  M.save  = function() M.save_table() end
+  M.down       = function() M.movey(1) end
+  M.up         = function() M.movey(-1) end
+  M.left       = function() M.movex(-1) end
+  M.right      = function() M.movex(1) end
+  M.delete     = function() M.delete_char(1) end
+  M.backspace  = function() if M.movex(-1) then M.delete_char(1) end end
+  M.open       = function() M.read_file_into_table() end
+  M.save       = function() M.save_file_from_table() end
 
   function M.register_functions(wname)
-    textbox.input.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
-    textbox.input.bind_seq(wname, 'quit',  M.quit, "Quit")
-    textbox.input.bind_key(wname, M.KEY_DOWN_ARROW,   M.down,  "Move down")
-    textbox.input.bind_key(wname, M.KEY_UP_ARROW,     M.up,    "Move up")
-    textbox.input.bind_key(wname, M.KEY_LEFT_ARROW,   M.left,  "Move left")
-    textbox.input.bind_key(wname, M.KEY_RIGHT_ARROW,  M.right, "Move right")
-    textbox.input.bind_key(wname, M.KEY_CTRL_O,       M.open,  "Open file")
-    textbox.input.bind_key(wname, M.KEY_CTRL_S,       M.save,  "Save file")
+    local tbi = textbox.input
+    tbi.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
+    tbi.bind_seq(wname, 'quit',  M.quit, "Quit")
+    tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,  "Move down")
+    tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,    "Move up")
+    tbi.bind_key(wname, tbi.KEY_LEFT_ARROW,   M.left,  "Move left")
+    tbi.bind_key(wname, tbi.KEY_RIGHT_ARROW,  M.right, "Move right")
+    tbi.bind_key(wname, tbi.KEY_DELETE,       M.delete, "Delete character")
+    tbi.bind_key(wname, tbi.KEY_BACKSPACE,    M.backspace, "Delete previous character")
+    tbi.bind_key(wname, tbi.KEY_CTRL_O,       M.open,  "Open file")
+    tbi.bind_key(wname, tbi.KEY_CTRL_S,       M.save,  "Save file")
   end
 
 return M
