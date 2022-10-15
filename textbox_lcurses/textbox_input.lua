@@ -120,12 +120,10 @@ local M = {}
     local is_enter_key = (c == 10) or (c == 13)
     local is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
 
-    M.tb.dbg.clear("active=" .. active_window  .. " cmd_key='" .. tostring(c))
     M.all_windows[active_window] = M.all_windows[active_window] or {}
     M.all_windows[active_window].window_specific_commands = M.all_windows[active_window].window_specific_commands or {}
     if M.all_windows[active_window].window_specific_commands[c] then
       local input_function = M.all_windows[active_window].window_specific_commands[c]
-      M.tb.dbg.print("in " .. active_window .. '.' .. c)
       input_function()
       M.history[#M.history+1] = c
       return true

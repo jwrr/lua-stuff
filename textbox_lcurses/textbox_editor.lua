@@ -39,8 +39,10 @@
   M.last_line = 0
   M.insert_mode = true -- overwrite = false
   M.filename = "text.txt"
-  M.lines_from_top = 5
-  M.lines_from_bot = 5
+  
+  M.cfg = {}
+  M.cfg.lines_from_top = 7
+  M.cfg.lines_from_bot = 10
 
 
   function M.save_file_from_table(filename, lines)
@@ -68,33 +70,48 @@
   end
 
 
+  function M.moveto()
+    tb.moveto(M.wname, M.y, M.x)
+  end
+
+
   function M.print()
 
     local maxy, maxx = tb.getmaxyx(M.wname)
+    maxy = tb.max(maxy-2, 0)
     local half_screen = maxy // 2
     
     local delta_from_top = M.line_number - M.first_line
+    M.last_line = tb.min(M.first_line + maxy - 1, #M.lines)
     local delta_from_bot = M.last_line - M.line_number
-    
-    if delta_from_top <= M.lines_from_top then
-      M.first_line = tb.max(M.line_number - M.lines_from_top, 1)
-      M.last_line = tb.min(M.first_line + maxy - 1, #M.lines)
-    elseif delta_from_bot <= M.lines_from_bot then
-      M.last_line = tb.min(M.line_number + M.lines_from_bot - 1, #M.lines)
-      M.first_line = tb.max(M.last_line - maxy + 1, 1)
+
+    if delta_from_top < M.cfg.lines_from_top then
+      M.first_line = tb.max(M.line_number - M.cfg.lines_from_top, 1)
+    elseif delta_from_bot < M.cfg.lines_from_bot then
+      M.actual_lines_from_top = tb.max(maxy - M.cfg.lines_from_bot, 0)
+      M.first_line = tb.max(M.line_number - M.actual_lines_from_top, 1)
     end
     
-    M.first_line = tb.max(M.line_number - half_screen, 1)
+--     M.first_line = tb.max(M.line_number - half_screen, 1)
     M.last_line = tb.min(M.first_line + maxy - 1, #M.lines)
 
+    if M.last_line == #M.lines then
+      M.first_line = tb.max(M.last_line - maxy + 1, 1)
+    end
+
+
+    tb.dbg.print("lnum="..tostring(M.line_number)..' first='..tostring(M.first_line)..' last='..tostring(M.last_line))
 
     tb.print_lines(M.wname, M.lines, true, M.first_line, M.last_line)
     M.column = M.column or 1
     M.lines[M.line_number] = M.lines[M.line_number] or ''
-    local x = tb.min(M.column, #M.lines[M.line_number]+1) - 1
-    local y = M.line_number - M.first_line
-    tb.moveto(M.wname, y, x)
+    M.x = tb.min(M.column, #M.lines[M.line_number]+1) - 1
+    M.y = M.line_number - M.first_line
+    tb.dbg.print("before moveto: lnum="..tostring(M.line_number)..' first='..tostring(M.first_line)..' last='..tostring(M.last_line)..' y='..tostring(y))
+--    tb.moveto(M.wname, y, x)
+    tb.moveto(M.wname, M.y, M.x)
     tb.refresh(M.wname)
+    tb.dbg.print("after refresh")
   end
 
 

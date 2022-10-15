@@ -260,15 +260,15 @@ local M = {}
     end
   end
 
-
-  function M.print_lines(name, lines, no_refresh, first_line, last_line)
+  function M.print_lines(wname, lines, no_refresh, first_line, last_line)
     no_refresh = no_refresh or false
     first_line = first_line or 1
     last_line = last_line or #lines or 0
     local refresh = not no_refresh
-    local this = M.all_windows[name]
+    local this = M.all_windows[wname]
     local txt_width = this.txt_width - 1
     this.win:move(0,0)
+    M.dbg.print("in print_lines: wname=".. wname  .. " first="..tostring(first_line)..' last='..tostring(last_line))
     for i=first_line,last_line do
       line1 = lines[i]
       local line = M.stringx.rstrip(line1, "\n\r")
@@ -282,13 +282,14 @@ local M = {}
     end
     this.win:clrtobot()
     if refresh then
-      M.refresh(name)
+      M.refresh(wname)
     end
   end
   
   
   function M.moveto(name, y, x)
     local this = M.all_windows[name]
+    M.dbg.print("in moveto. "..name.. " y="..tostring(y)..' x='..tostring(x))
     this.win:move(y, x)
   end
 

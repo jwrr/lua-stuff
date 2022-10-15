@@ -33,14 +33,15 @@ local M = {}
     tb.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 35, hasborder = true,  color_pair = tb.color.magenta_on_black})
     M.update_screen(true)
     tb.resize_windows(true)
+    editor.moveto()
   end
 
   function M.update_screen(force)
     tb.resize_windows(false)
     force = force or false
     banner.print()
-    tb.print('status', tb.dbg.str)
     dirtree.print(force)
+    tb.print('status', tb.dbg.str)
     editor.print(force)
   end
 
