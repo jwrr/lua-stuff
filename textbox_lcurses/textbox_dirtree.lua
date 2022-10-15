@@ -21,10 +21,10 @@
 -- SOFTWARE.
 
 local M = {}
-  M.wname = "nav"
+  M.wname = 'nav'
   M.current_line = 1;
 
-  local textbox = require'textbox'
+  local tb = require'textbox'
 
   function M.rpad(str, len, pad_ch)
     pad_ch = pad_ch or ' '
@@ -49,7 +49,7 @@ local M = {}
     local f = {}
     f.fullname = filename
     f.parent, f.name = filename:match('(.*' .. sep .. ')(.*)')
-    f.mode = textbox.lfs.attributes(filename).mode
+    f.mode = tb.lfs.attributes(filename).mode
     f.isdir = f.mode == 'directory'
     f.level = M.count(f.parent, '/') - 1
     return f
@@ -63,7 +63,7 @@ local M = {}
     sep = sep or package.config:sub(1,1)
 
     filelist = filelist or {}	-- use provided list or create a new one
-    for filename in textbox.lfs.dir(dir) do
+    for filename in tb.lfs.dir(dir) do
       if filename ~= "." and filename ~= ".." then
         local full_filename = dir .. sep .. filename
         local match = M.count(full_filename, luapat_filter) > 0
@@ -122,9 +122,9 @@ local M = {}
 
   function M.print(force)
     force = force or false
-    if force or textbox.active_window == M.wname then
+    if force or tb.active_window == M.wname then
       local files = M.lines("..")
-      textbox.print_lines('nav', files)
+      tb.print_lines(M.wname, files)
       return true
     else
       return false
@@ -133,9 +133,9 @@ local M = {}
 
 
   function M.new(cfg)
-    wname = 'nav'
+    wname = M.wname
     cfg['name'] = wname
-    textbox.new(cfg)
+    tb.new(cfg)
     M.register_functions(wname)
   end
 
@@ -145,16 +145,19 @@ local M = {}
 
   function M.open(editor_window)
     editor_window = editor_window or 'editor'
-    local tmp_window = textbox.active_window
-    textbox.active_window = 'editor'
-    textbox.refresh(editor_window)
-    textbox.refresh(tmp_window)
+    local tmp_window = tb.active_window
+    tb.active_window = 'editor'
+    tb.refresh(editor_window)
+    tb.refresh(tmp_window)
     
     M.filelist[M.current_line] = M.filelist[M.current_line] or {}
     if M.filelist[M.current_line] then
       local filename = M.filelist[M.current_line].fullname
-      textbox.dbg.print('filename=' ..  filename)
-      textbox.filename = filename
+      tb.dbg.print('filename=' ..  filename)
+      tb.filename = filename
+      if tb.filepicker_callback then
+        tb.filepicker_callback()
+      end
     end
   end
 
@@ -169,7 +172,7 @@ local M = {}
   end
 
   function M.register_functions(wname)
-    local tbi = textbox.input
+    local tbi = tb.input
     tbi.bind_seq(wname, 'open',               M.open, "Open selected file")
     tbi.bind_seq(wname, 'down',               M.down, "Scroll up to previous file")
     tbi.bind_seq(wname, 'up',                 M.up,   "Scroll up to previous file")

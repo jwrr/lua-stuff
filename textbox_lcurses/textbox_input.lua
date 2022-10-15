@@ -37,8 +37,8 @@ local M = {}
   M.history_idx = 0;
 
 
-  function M.init(textbox)
-    M.textbox = textbox
+  function M.init(tb)
+    M.tb = tb
   end
 
 
@@ -50,7 +50,7 @@ local M = {}
 
     M.all_windows[wname].window_specific_commands[seq] = func
     M.all_windows[wname].window_specific_command_description[seq] = description
-    M.textbox.dbg.print("bind_seq: " .. wname .. " " .. seq)
+    M.tb.dbg.print("bind_seq: " .. wname .. " " .. seq)
   end
 
 
@@ -62,7 +62,7 @@ local M = {}
 
     M.all_windows[wname].window_specific_commands[key] = func
     M.all_windows[wname].window_specific_command_description[key] = description
-    M.textbox.dbg.print("bind_key: " .. wname .. " " .. key)
+    M.tb.dbg.print("bind_key: " .. wname .. " " .. key)
   end
 
 
@@ -96,12 +96,12 @@ local M = {}
         if escape_sequence == '' then
           escape_sequence = M.history[#M.history] or ''
         end
-        M.textbox.dbg.clear_print("active=" .. active_window  .. " escape_sequence='" .. escape_sequence)
+        M.tb.dbg.clear("active=" .. active_window  .. " escape_sequence='" .. escape_sequence)
         M.all_windows[active_window] = M.all_windows[active_window] or {}
         M.all_windows[active_window].window_specific_commands = M.all_windows[active_window].window_specific_commands or {}
         if M.all_windows[active_window].window_specific_commands[escape_sequence] then
           local input_function = M.all_windows[active_window].window_specific_commands[escape_sequence]
-          M.textbox.dbg.print("in " .. active_window .. '.' .. escape_sequence)
+          M.tb.dbg.print("in " .. active_window .. '.' .. escape_sequence)
           input_function()
           M.history[#M.history+1] = escape_sequence
         elseif M[M.escape_sequence] then -- common text_box command
@@ -120,12 +120,12 @@ local M = {}
     local is_enter_key = (c == 10) or (c == 13)
     local is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
 
-    M.textbox.dbg.clear_print("active=" .. active_window  .. " cmd_key='" .. tostring(c))
+    M.tb.dbg.clear("active=" .. active_window  .. " cmd_key='" .. tostring(c))
     M.all_windows[active_window] = M.all_windows[active_window] or {}
     M.all_windows[active_window].window_specific_commands = M.all_windows[active_window].window_specific_commands or {}
     if M.all_windows[active_window].window_specific_commands[c] then
       local input_function = M.all_windows[active_window].window_specific_commands[c]
-      M.textbox.dbg.print("in " .. active_window .. '.' .. c)
+      M.tb.dbg.print("in " .. active_window .. '.' .. c)
       input_function()
       M.history[#M.history+1] = c
       return true
@@ -135,16 +135,16 @@ local M = {}
 
 
   function M.getch()
-    local c = M.textbox.stdscr:getch()
+    local c = M.tb.stdscr:getch()
     M.c = c
     M.is_quit_key  = (c == 17)
     M.is_valid_key = (c <= 255)
     M.is_enter_key = (c == 10)
     M.is_backspace_key  = (c == 8) or (c == 127) or (c == 263)
     M.ch = M.is_valid_key and string.char(c) or ''
-    M.in_escape_sequence = M.handle_escape_sequence(M.textbox.active_window, c)
+    M.in_escape_sequence = M.handle_escape_sequence(M.tb.active_window, c)
     if not M.in_escape_sequence then
-      M.is_cmdkey = M.handle_cmdkey(M.textbox.active_window, c)
+      M.is_cmdkey = M.handle_cmdkey(M.tb.active_window, c)
     end
     return not M.in_escape_sequence and not M.is_cmdkey
   end

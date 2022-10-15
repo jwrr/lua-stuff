@@ -22,21 +22,25 @@
 
   local M = {}
 
-  local textbox = require'textbox'
+  local tb = require'textbox'
 
   M.wname = 'editor'
 
   function M.new(cfg)
     cfg['name'] = M.wname
-    textbox.new(cfg)
+    tb.new(cfg)
     M.register_functions(M.wname)
   end
 
   M.lines = {}
-  M.linenumber = 1
+  M.line_number = 1
   M.column = 1
+  M.first_line = 1
+  M.last_line = 0
   M.insert_mode = true -- overwrite = false
   M.filename = "text.txt"
+  M.lines_from_top = 5
+  M.lines_from_bot = 5
 
 
   function M.save_file_from_table(filename, lines)
@@ -48,40 +52,49 @@
     end
     f:close()
   end
-  
+
   function M.read_file_into_table(filename)
-    filename = filename or textbox.filename
+    filename = filename or tb.filename
     M.filename = filename
-    textbox.dbg.print('filename=' ..  filename)
+    tb.dbg.print('filename=' ..  filename)
 
     local lines = {}
     for line in io.lines(filename) do
       table.insert(lines, line)
     end
     M.lines = lines
-    M.linenumber = 1
+    M.line_number = 1
     M.column = 1
-  end
-  
-
-  function M.min(a, b)
-    return (a < b) and a or b
-  end
-
-
-  function M.max(a, b)
-    return (a > b) and a or b
   end
 
 
   function M.print()
-    textbox.print_lines(M.wname, M.lines, true)
+
+    local maxy, maxx = tb.getmaxyx(M.wname)
+    local half_screen = maxy // 2
+    
+    local delta_from_top = M.line_number - M.first_line
+    local delta_from_bot = M.last_line - M.line_number
+    
+    if delta_from_top <= M.lines_from_top then
+      M.first_line = tb.max(M.line_number - M.lines_from_top, 1)
+      M.last_line = tb.min(M.first_line + maxy - 1, #M.lines)
+    elseif delta_from_bot <= M.lines_from_bot then
+      M.last_line = tb.min(M.line_number + M.lines_from_bot - 1, #M.lines)
+      M.first_line = tb.max(M.last_line - maxy + 1, 1)
+    end
+    
+    M.first_line = tb.max(M.line_number - half_screen, 1)
+    M.last_line = tb.min(M.first_line + maxy - 1, #M.lines)
+
+
+    tb.print_lines(M.wname, M.lines, true, M.first_line, M.last_line)
     M.column = M.column or 1
-    M.lines[M.linenumber] = M.lines[M.linenumber] or ''
-    local x = M.min(M.column, #M.lines[M.linenumber]+1) - 1
-    local y = M.linenumber - 1
-    textbox.moveto(M.wname, y, x)
-    textbox.refresh(M.wname)
+    M.lines[M.line_number] = M.lines[M.line_number] or ''
+    local x = tb.min(M.column, #M.lines[M.line_number]+1) - 1
+    local y = M.line_number - M.first_line
+    tb.moveto(M.wname, y, x)
+    tb.refresh(M.wname)
   end
 
 
@@ -102,22 +115,22 @@
   function M.insert(str)
     local str2 = M.trim_cr(str)
     local new_str_ends_with_cr = #str2 ~= #str
-    local line = M.lines[M.linenumber] or ''
+    local line = M.lines[M.line_number] or ''
     local col = M.column
     line = line:sub(1, col-1) .. str2 .. line:sub(col, #line)
     M.column = col + #str2
-    M.lines[M.linenumber] = line
+    M.lines[M.line_number] = line
     if new_str_ends_with_cr then
-      M.lines[M.linenumber] = line:sub(1, M.column-1)
-      M.linenumber = M.linenumber + 1
-      table.insert(M.lines, M.linenumber, line:sub(M.column))
+      M.lines[M.line_number] = line:sub(1, M.column-1)
+      M.line_number = M.line_number + 1
+      table.insert(M.lines, M.line_number, line:sub(M.column))
       M.column = 1
     end
   end
 
 
   function M.enter_text(str)
-    str = str or textbox.input.ch or ''
+    str = str or tb.input.ch or ''
     if M.insert_mode then
       M.insert(str)
     else
@@ -126,10 +139,10 @@
   end
 
 
-  function M.delete_lines(linenumber, n)
-    linenumber = linenumber or M.linenumber
+  function M.delete_lines(line_number, n)
+    line_number = line_number or M.line_number
     n = n or 1
-    for i = linenumber, #M.lines-n  do
+    for i = line_number, #M.lines-n  do
       M.lines[i] = M.lines[i+n]
     end
     for i = #M.lines-n+1, #M.lines do
@@ -138,22 +151,22 @@
   end
 
 
-  function M.join_lines(linenumber)
-    linenumber = linenumber or M.linenumber
-    if linenumber < #M.lines then
-       M.lines[linenumber] = M.lines[linenumber] .. M.lines[linenumber+1]
-       M.delete_lines(linenumber + 1, 1)
+  function M.join_lines(line_number)
+    line_number = line_number or M.line_number
+    if line_number < #M.lines then
+       M.lines[line_number] = M.lines[line_number] .. M.lines[line_number+1]
+       M.delete_lines(line_number + 1, 1)
     end
   end
 
 
   function M.delete_char(n)
     n = n or 1
-    local line = M.lines[M.linenumber] or ''
+    local line = M.lines[M.line_number] or ''
     local col = M.column
     local removing_cr = col+n > #line+1
     line = line:sub(1, col-1) .. line:sub(col+n)
-    M.lines[M.linenumber] = line
+    M.lines[M.line_number] = line
     if removing_cr then
       M.join_lines()
     end
@@ -161,11 +174,11 @@
 
 
   function M.getchar()
-    local is_text = textbox.input.getch()
+    local is_text = tb.input.getch()
     if is_text then
       M.enter_text()
     end
-    return not textbox.quit()
+    return not tb.quit()
   end
 
 -- ==========================================================================
@@ -173,20 +186,20 @@
 
   function M.movey(delta_y)
     delta_y = delta_y or 0
-    local ln1 = M.linenumber
+    local ln1 = M.line_number
     if delta_y ~= 0 then
-      local ln = M.linenumber + delta_y
-      ln = M.max(ln, 1)
-      M.linenumber = M.min(ln, #M.lines)
+      local ln = M.line_number + delta_y
+      ln = tb.max(ln, 1)
+      M.line_number = tb.min(ln, #M.lines)
     end
-    local success = M.linenumber ~= ln1
+    local success = M.line_number ~= ln1
     return success
   end
 
 
-  function M.colmax(linenumber)
-    linenumber = linenumber or M.linenumber
-    return #M.lines[M.linenumber] + 1
+  function M.colmax(line_number)
+    line_number = line_number or M.line_number
+    return #M.lines[M.line_number] + 1
   end
 
 
@@ -194,8 +207,8 @@
     delta_x = delta_x or 0
     if delta_x == 0 then return  end
     local col1 = M.column
-    local ln1 = M.linenumber
-    local col = M.min(M.column, M.colmax())
+    local ln1 = M.line_number
+    local col = tb.min(M.column, M.colmax())
     col = col + delta_x
     if delta_x < 0 then
       while (col < 1) and M.movey(-1) do
@@ -208,27 +221,37 @@
         colmax = M.colmax()
       end
     end
-    col = M.max(col, 1)
-    M.column = M.min(col, M.colmax())
-    local success = (M.column ~= col1) or (M.linenumber ~= ln1)
+    col = tb.max(col, 1)
+    M.column = tb.min(col, M.colmax())
+    local success = (M.column ~= col1) or (M.line_number ~= ln1)
     return success
   end
 
 
   function M.open_file(filename)
-    textbox.filename = filename or textbox.filename or ''
-    if textbox.filename == '' then
-      local tmp_window = textbox.active_window
-      textbox.active_window = "nav"
-      textbox.refresh(tmp_window)
+    tb.filename = filename or tb.filename or ''
+    tb.dbg.clear("In open_file")
+    if tb.filename == '' then
+      tb.dbg.print("file is empty")
+      local tmp_window = tb.active_window
+      tb.all_windows["nav"].hidden = false
+      tb.resize_windows(true)
+      tb.active_window = "nav"
+      tb.filepicker_callback = M.open_file
+      tb.dbg.print("after screen resize. active window = "..tb.active_window)
     else
-      textbox.read_file_into_table(textbox.filename)
+      tb.dbg.print("reading file")
+      M.read_file_into_table(tb.filename)
+      M.filename = tb.filename
+      tb.filename = nil
+      tb.all_windows["nav"].hidden = true
+      tb.resize_windows(true)
     end
   end
 
 
   function M.quit()
-    textbox.quit(true)
+    tb.quit(true)
   end
 
 
@@ -239,11 +262,11 @@
   M.right      = function() M.movex(1) end
   M.delete     = function() M.delete_char(1) end
   M.backspace  = function() if M.movex(-1) then M.delete_char(1) end end
-  M.open       = function() M.read_file_into_table() end
+  M.open       = function() M.open_file() end
   M.save       = function() M.save_file_from_table() end
 
   function M.register_functions(wname)
-    local tbi = textbox.input
+    local tbi = tb.input
     tbi.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
     tbi.bind_seq(wname, 'quit',  M.quit, "Quit")
     tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,  "Move down")

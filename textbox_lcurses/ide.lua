@@ -19,35 +19,39 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 -- SOFTWARE.
 
-local textbox = require'textbox'
-local banner  = require'textbox_banner'
-local dirtree = require'textbox_dirtree'
-local editor  = require'textbox_editor'
+local M = {}
+  local tb = require'textbox'
+  local banner  = require'textbox_banner'
+  local dirtree = require'textbox_dirtree'
+  local editor  = require'textbox_editor'
 
-function init_screen()
-  textbox.start()
-  banner.new({height =  1, width = 137, starty =  0, startx =  0, hasborder = false, color_pair = textbox.color.black_on_white})
-  dirtree.new({height = 40, width =  35, starty =  1, startx =  0, hasborder = true,  color_pair = textbox.color.black_on_white})
-  editor.new({height = 30, width = 100, starty =  1, startx = 35, hasborder = true,  color_pair = textbox.color.white_on_black, active = true })
-  textbox.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 35, hasborder = true,  color_pair = textbox.color.magenta_on_black})
-  update_screen(true)
-end
-
-function update_screen(force)
-  textbox.resize_windows()
-  force = force or false
-  banner.print()
-  textbox.print('status', textbox.dbg.str)
-  dirtree.print(force)
-  editor.print(force)
-end
-
-function ide()
-  init_screen()
-  while editor.getchar() do
-    update_screen(true)
+  function M.init_screen()
+    tb.start()
+    banner.new({height =  1, width = 137, starty =  0, startx =  0, hasborder = false, color_pair = tb.color.black_on_white})
+    dirtree.new({height = 40, width =  35, starty =  1, startx =  0, hasborder = true,  color_pair = tb.color.black_on_white, hidden = true})
+    editor.new({height = 30, width = 100, starty =  1, startx = 35, hasborder = true,  color_pair = tb.color.white_on_black, active = true})
+    tb.new({name = 'status',  height = 10, width = 100, starty = 31, startx = 35, hasborder = true,  color_pair = tb.color.magenta_on_black})
+    M.update_screen(true)
+    tb.resize_windows(true)
   end
-end
 
-xpcall(ide, textbox.err)
+  function M.update_screen(force)
+    tb.resize_windows(false)
+    force = force or false
+    banner.print()
+    tb.print('status', tb.dbg.str)
+    dirtree.print(force)
+    editor.print(force)
+  end
+
+  function M.ide()
+    M.init_screen()
+    while editor.getchar() do
+      M.update_screen(true)
+    end
+  end
+
+  xpcall(M.ide, tb.err)
+
+return M
 

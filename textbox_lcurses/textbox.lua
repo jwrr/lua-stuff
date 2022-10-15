@@ -55,8 +55,23 @@ local M = {}
   end
 
 
-  function M.getmaxyx()
+  function M.getmaxyx(wname)
+    if wname then
+      local maxy = M.all_windows[wname].height
+      local maxx = M.all_windows[wname].width
+      return maxy, maxx
+    end
     return M.maxy, M.maxx
+  end
+
+
+  function M.min(a, b)
+    return (a < b) and a or b
+  end
+
+
+  function M.max(a, b)
+    return (a > b) and a or b
   end
 
 
@@ -196,16 +211,25 @@ local M = {}
   end
 
 
-  function M.resize_windows()
+  function M.resize_windows(force)
     local stdscr = M.stdscr
     local prev_maxy, prev_maxx = M.getmaxyx()
     local maxy, maxx = stdscr:getmaxyx()
-    if  maxy ~= prev_maxy or maxx ~= prev_maxx then
+    if  maxy ~= prev_maxy or maxx ~= prev_maxx or force then
       M.setmaxyx(maxy, maxx)
-      M.update({name = "banner", width = maxx})
-      M.update({name = "editor", width = maxx - 36, height = maxy - 11})
-      M.update({name = "status", width = maxx - 36, starty = maxy - 10})
-      M.update({name = "nav",    height = maxy-1})
+      
+      if M.all_windows['nav'].hidden then
+        M.update({name = "banner", height =  1, starty =  0, startx =  0,      width = maxx})
+        M.update({name = "editor", starty =  1, startx =  0, width = maxx, height = maxy - 11})
+        M.update({name = "status", height = 10, startx =  0, width = maxx, starty = maxy - 10})
+        -- M.update({name = "nav",    width =  0, starty =  0, startx =  0,   height = 0})
+      else
+        M.update({name = "banner", height =  1, starty =  0, startx =  0,      width = maxx})
+        M.update({name = "editor", starty =  1, startx = 35, width = maxx - 36, height = maxy - 11})
+        M.update({name = "status", height = 10, startx = 35, width = maxx - 36, starty = maxy - 10})
+        M.update({name = "nav",    width =  35, starty =  1, startx =  0,   height = maxy-1})
+      end
+
     end
     return maxy, maxx
   end
@@ -213,18 +237,20 @@ local M = {}
 
   function M.refresh(name)
     local this = M.all_windows[name]
-    if this.hasborder then
-      local box_name = name .. '_box'
-      local color = M.white_on_black
-      if M.active_window == name then
-        M.color.set_color_pair(box_name, M.color.red_on_black)
-      else
-        M.color.set_color_pair(box_name, M.color.white_on_black)
+    if not this.hidden then
+      if this.hasborder then
+        local box_name = name .. '_box'
+        local color = M.white_on_black
+        if M.active_window == name then
+          M.color.set_color_pair(box_name, M.color.red_on_black)
+        else
+          M.color.set_color_pair(box_name, M.color.white_on_black)
+        end
+        M.all_windows[box_name].win:box(0, 0)
+        M.all_windows[box_name].win:refresh()
       end
-      M.all_windows[box_name].win:box(0, 0)
-      M.all_windows[box_name].win:refresh()
+      this.win:refresh()
     end
-    this.win:refresh()
   end
 
 
@@ -235,13 +261,16 @@ local M = {}
   end
 
 
-  function M.print_lines(name, lines, no_refresh)
+  function M.print_lines(name, lines, no_refresh, first_line, last_line)
     no_refresh = no_refresh or false
+    first_line = first_line or 1
+    last_line = last_line or #lines or 0
     local refresh = not no_refresh
     local this = M.all_windows[name]
     local txt_width = this.txt_width - 1
     this.win:move(0,0)
-    for i,line1 in ipairs(lines) do
+    for i=first_line,last_line do
+      line1 = lines[i]
       local line = M.stringx.rstrip(line1, "\n\r")
       local has_eol = (line ~= line1)
       local is_lastline = (i == #lines)

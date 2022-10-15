@@ -24,8 +24,8 @@ local M = {}
 
   local curses  = require'curses'
 
-  function M.init(textbox)
-    M.textbox = textbox
+  function M.init(tb)
+    M.tb = tb
   end
 
   function M.htmlcolor(id, colorcode)
@@ -40,7 +40,7 @@ local M = {}
 
 
   function M.set_color_pair(name, color_pair)
-    M.textbox.all_windows[name].win:attron(curses.color_pair(color_pair))
+    M.tb.all_windows[name].win:attron(curses.color_pair(color_pair))
   end
 
 

@@ -31,7 +31,7 @@ local M = {}
     end
   end
   
-  function M.clear_print(str, no_cr)
+  function M.clear(str, no_cr)
     M.str = ""
     M.print(str, no_cr)
   end

@@ -22,34 +22,34 @@
 
 local M = {}
 
-  local textbox = require'textbox'
+  local tb = require'textbox'
   local win_name = 'banner'
 
   function M.new(cfg)
     cfg['name'] = win_name
-    textbox.new(cfg)
+    tb.new(cfg)
   end
 
 
   M.banner_struct = {visible = true}
 
   function M.tostring()
-    local c = textbox.input.c
-    local ch_banner = textbox.input.ch or "r"
-    local is_enter_key = textbox.input.is_enter_key
-    local is_backspace_key = textbox.input.is_backspace_key
-    local is_valid_key = textbox.input.is_valid_key 
+    local c = tb.input.c
+    local ch_banner = tb.input.ch or "r"
+    local is_enter_key = tb.input.is_enter_key
+    local is_backspace_key = tb.input.is_backspace_key
+    local is_valid_key = tb.input.is_valid_key 
     if is_enter_key then
       ch_banner = '<cr>'
     elseif is_backspace_key then
       ch_banner = '<bs>'
     end
     local banner_str = ""
-    if textbox.input.in_progress then
-      banner_str = "input: " .. textbox.input.escape_sequence
+    if tb.input.in_progress then
+      banner_str = "input: " .. tb.input.escape_sequence
     else
       local stdscr = M.stdscr
-      local maxx, maxy = textbox.getmaxyx(stdscr)
+      local maxx, maxy = tb.getmaxyx()
       banner_str = "Enter Ctrl-Q to quit, '" .. ch_banner  .. "' (" .. tostring(c)  ..  '), size= ' .. tostring(maxx) .. 'x' .. tostring(maxy)
     end
     return banner_str
@@ -57,8 +57,8 @@ local M = {}
 
 
   function M.print(str)
-    str = str or M.tostring(textbox.input.c)
-    textbox.print(win_name, str)
+    str = str or M.tostring(tb.input.c)
+    tb.print(win_name, str)
   end
 
 return M
