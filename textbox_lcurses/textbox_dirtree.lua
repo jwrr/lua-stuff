@@ -22,7 +22,7 @@
 
 local M = {}
   M.wname = 'nav'
-  M.current_line = 1;
+  M.line_number = 1;
 
   local tb = require'textbox'
 
@@ -81,7 +81,7 @@ local M = {}
   end
 
 
-  function M.lines(path, glob_filter)
+  function M.read_files_into_lines(path, glob_filter)
     local path = path or "."
     local glob_filter = glob_filter or ""
     local luapat_filter = glob_filter:gsub('%*', '.*')
@@ -90,10 +90,10 @@ local M = {}
     local lines = {}
     if #files > 0 then
       for i,f in ipairs(files) do
-        local indent_ch = (i == M.current_line) and '=' or ' '
+        local indent_ch = (i == M.line_number) and '=' or ' '
         local indent = M.rpad('', 2*f.level, indent_ch) .. ' '
         local icon = f.isdir and 'v ' or ''
-        local after = (i == M.current_line) and ' '..string.rep(indent_ch, 20) or ''
+        local after = (i == M.line_number) and ' '..string.rep(indent_ch, 20) or ''
         local line = indent .. icon .. f.name .. after .. '\n'
         lines[#lines+1] = line
       end
@@ -123,8 +123,9 @@ local M = {}
   function M.print(force)
     force = force or false
     if force or tb.active_window == M.wname then
-      local files = M.lines("..")
-      tb.print_lines(M.wname, files)
+      M.lines = M.read_files_into_lines("..")
+      tb.print_lines2(M, false)
+--      tb.print_lines(M.wname, M.lines)
       return true
     else
       return false
@@ -143,16 +144,16 @@ local M = {}
 -- ======================================================
 -- ======================================================
 
-  function M.open(editor_window)
+  function M.open_file(editor_window)
     editor_window = editor_window or 'editor'
     local tmp_window = tb.active_window
     tb.active_window = 'editor'
     tb.refresh(editor_window)
     tb.refresh(tmp_window)
     
-    M.filelist[M.current_line] = M.filelist[M.current_line] or {}
-    if M.filelist[M.current_line] then
-      local filename = M.filelist[M.current_line].fullname
+    M.filelist[M.line_number] = M.filelist[M.line_number] or {}
+    if M.filelist[M.line_number] then
+      local filename = M.filelist[M.line_number].fullname
       tb.dbg.print('filename=' ..  filename)
       tb.filename = filename
       if tb.filepicker_callback then
@@ -162,23 +163,74 @@ local M = {}
   end
 
 
-  function M.up()
-    M.current_line = M.current_line - 1
+--   function M.up()
+--     M.line_number = M.line_number - 1
+--   end
+--
+--
+--   function M.down()
+--     M.line_number = M.line_number + 1
+--   end
+--
+--   function M.register_functions(wname)
+--     local tbi = tb.input
+--     tbi.bind_seq(wname, 'open',               M.open, "Open selected file")
+--     tbi.bind_seq(wname, 'down',               M.down, "Scroll up to previous file")
+--     tbi.bind_seq(wname, 'up',                 M.up,   "Scroll up to previous file")
+--     tbi.bind_key(wname, tbi.KEY_ENTER,        M.open,  "Select file and open")
+--     tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,  "Move down")
+--     tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,    "Move up")
+--   end
+--
+
+  function M.movey(delta_y)
+    return tb.movey(M, delta_y)
   end
 
 
-  function M.down()
-    M.current_line = M.current_line + 1
+  function M.movex(delta_x)
+    return tb.movex(M, delta_x)
   end
+
+  function M.goto_line(y)
+    return tb.goto_line(M, y)
+  end
+
+
+  M.down       = function() M.movey(1) end
+  M.up         = function() M.movey(-1) end
+  M.left       = function() M.movex(-1) end
+  M.right      = function() M.movex(1) end
+  M.pagedown   = function() M.movey(tb.num_usable_lines(M.wname)) end
+  M.pageup     = function() M.movey(-1*tb.num_usable_lines(M.wname)) end
+  M.home       = function() M.goto_line(1) end
+  M.endx       = function() M.goto_line(#M.lines) end
+
+  M.delete     = function() M.delete_char(1) end
+  M.backspace  = function() if M.movex(-1) then M.delete_char(1) end end
+  M.open       = function() M.open_file() end
+  M.save       = function() tb.save_file_from_table() end
 
   function M.register_functions(wname)
     local tbi = tb.input
-    tbi.bind_seq(wname, 'open',               M.open, "Open selected file")
-    tbi.bind_seq(wname, 'down',               M.down, "Scroll up to previous file")
-    tbi.bind_seq(wname, 'up',                 M.up,   "Scroll up to previous file")
+    tbi.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
+    tbi.bind_seq(wname, 'quit',  M.quit, "Quit")
+    tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,      "Move down")
+    tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,        "Move up")
+    tbi.bind_key(wname, tbi.KEY_PAGEUP,       M.pageup,    "Page up")
+    tbi.bind_key(wname, tbi.KEY_PAGEDOWN,     M.pagedown,  "Page down")
+    tbi.bind_key(wname, tbi.KEY_HOME,         M.home,      "Goto 1st line")
+    tbi.bind_key(wname, tbi.KEY_END,          M.endx,      "Goto last line")
+
+    tbi.bind_key(wname, tbi.KEY_CTRL_O,       M.open,      "Open file")
     tbi.bind_key(wname, tbi.KEY_ENTER,        M.open,  "Select file and open")
-    tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,  "Move down")
-    tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,    "Move up")
+
+-- --     tbi.bind_key(wname, tbi.KEY_LEFT_ARROW,   M.left,      "Move left")
+--     tbi.bind_key(wname, tbi.KEY_RIGHT_ARROW,  M.right,     "Move right")
+--     tbi.bind_key(wname, tbi.KEY_DELETE,       M.delete,    "Delete character")
+--     tbi.bind_key(wname, tbi.KEY_BACKSPACE,    M.backspace, "Delete previous character")
+--     tbi.bind_key(wname, tbi.KEY_CTRL_S,       M.save,      "Save file")
+
   end
 
 -- ==================================================================

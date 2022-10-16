@@ -43,31 +43,7 @@
   M.cfg = {}
   M.cfg.lines_from_top = 7
   M.cfg.lines_from_bot = 10
-
-
-  function M.save_file_from_table(filename, lines)
-    filename = filename or M.filename
-    local lines = lines or M.lines
-    local f = io.open(filename, 'w')
-    for _,line in ipairs(lines) do
-      f:write(line .. '\n')
-    end
-    f:close()
-  end
-
-  function M.read_file_into_table(filename)
-    filename = filename or tb.filename
-    M.filename = filename
-    tb.dbg.print('filename=' ..  filename)
-
-    local lines = {}
-    for line in io.lines(filename) do
-      table.insert(lines, line)
-    end
-    M.lines = lines
-    M.line_number = 1
-    M.column = 1
-  end
+  M.cfg.keep_centered  = false
 
 
   function M.moveto()
@@ -76,38 +52,12 @@
 
 
   function M.print()
-
-    local maxy, maxx = tb.getmaxyx(M.wname)
-    maxy = tb.max(maxy-2, 0)
-    local half_screen = maxy // 2
-    
-    local delta_from_top = M.line_number - M.first_line
-    M.last_line = tb.min(M.first_line + maxy - 1, #M.lines)
-    local delta_from_bot = M.last_line - M.line_number
-
-    if delta_from_top < M.cfg.lines_from_top then
-      M.first_line = tb.max(M.line_number - M.cfg.lines_from_top, 1)
-    elseif delta_from_bot < M.cfg.lines_from_bot then
-      M.actual_lines_from_top = tb.max(maxy - M.cfg.lines_from_bot, 0)
-      M.first_line = tb.max(M.line_number - M.actual_lines_from_top, 1)
-    end
-    
---     M.first_line = tb.max(M.line_number - half_screen, 1)
-    M.last_line = tb.min(M.first_line + maxy - 1, #M.lines)
-
-    if M.last_line == #M.lines then
-      M.first_line = tb.max(M.last_line - maxy + 1, 1)
-    end
-
-
-    tb.dbg.print("lnum="..tostring(M.line_number)..' first='..tostring(M.first_line)..' last='..tostring(M.last_line))
-
-    tb.print_lines(M.wname, M.lines, true, M.first_line, M.last_line)
+    tb.print_lines2(M, true)
     M.column = M.column or 1
     M.lines[M.line_number] = M.lines[M.line_number] or ''
     M.x = tb.min(M.column, #M.lines[M.line_number]+1) - 1
     M.y = M.line_number - M.first_line
-    tb.dbg.print("before moveto: lnum="..tostring(M.line_number)..' first='..tostring(M.first_line)..' last='..tostring(M.last_line)..' y='..tostring(y))
+    tb.dbg.print("before moveto: lnum="..tostring(M.line_number)..' first='..tostring(M.first_line)..' last='..tostring(last_line)..' y='..tostring(y))
 --    tb.moveto(M.wname, y, x)
     tb.moveto(M.wname, M.y, M.x)
     tb.refresh(M.wname)
@@ -201,50 +151,6 @@
 -- ==========================================================================
 -- ==========================================================================
 
-  function M.movey(delta_y)
-    delta_y = delta_y or 0
-    local ln1 = M.line_number
-    if delta_y ~= 0 then
-      local ln = M.line_number + delta_y
-      ln = tb.max(ln, 1)
-      M.line_number = tb.min(ln, #M.lines)
-    end
-    local success = M.line_number ~= ln1
-    return success
-  end
-
-
-  function M.colmax(line_number)
-    line_number = line_number or M.line_number
-    return #M.lines[M.line_number] + 1
-  end
-
-
-  function M.movex(delta_x)
-    delta_x = delta_x or 0
-    if delta_x == 0 then return  end
-    local col1 = M.column
-    local ln1 = M.line_number
-    local col = tb.min(M.column, M.colmax())
-    col = col + delta_x
-    if delta_x < 0 then
-      while (col < 1) and M.movey(-1) do
-        col = M.colmax() + col -- col is negative
-      end
-    else
-      local colmax = M.colmax()
-      while (col > colmax) and M.movey(1) do
-        col = colmax - col
-        colmax = M.colmax()
-      end
-    end
-    col = tb.max(col, 1)
-    M.column = tb.min(col, M.colmax())
-    local success = (M.column ~= col1) or (M.line_number ~= ln1)
-    return success
-  end
-
-
   function M.open_file(filename)
     tb.filename = filename or tb.filename or ''
     tb.dbg.clear("In open_file")
@@ -258,7 +164,7 @@
       tb.dbg.print("after screen resize. active window = "..tb.active_window)
     else
       tb.dbg.print("reading file")
-      M.read_file_into_table(tb.filename)
+      tb.read_file_into_table(M)
       M.filename = tb.filename
       tb.filename = nil
       tb.all_windows["nav"].hidden = true
@@ -272,28 +178,50 @@
   end
 
 
+  function M.movey(delta_y)
+    return tb.movey(M, delta_y)
+  end
+
+
+  function M.movex(delta_x)
+    return tb.movex(M, delta_x)
+  end
+
+  function M.goto_line(y)
+    return tb.goto_line(M, y)
+  end
+
 
   M.down       = function() M.movey(1) end
   M.up         = function() M.movey(-1) end
   M.left       = function() M.movex(-1) end
   M.right      = function() M.movex(1) end
+  M.pagedown   = function() M.movey(tb.num_usable_lines(M.wname)) end
+  M.pageup     = function() M.movey(-1*tb.num_usable_lines(M.wname)) end
+  M.home       = function() M.goto_line(1) end
+  M.endx       = function() M.goto_line(#M.lines) end
+
   M.delete     = function() M.delete_char(1) end
   M.backspace  = function() if M.movex(-1) then M.delete_char(1) end end
   M.open       = function() M.open_file() end
-  M.save       = function() M.save_file_from_table() end
+  M.save       = function() tb.save_file_from_table() end
 
   function M.register_functions(wname)
     local tbi = tb.input
     tbi.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
     tbi.bind_seq(wname, 'quit',  M.quit, "Quit")
-    tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,  "Move down")
-    tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,    "Move up")
-    tbi.bind_key(wname, tbi.KEY_LEFT_ARROW,   M.left,  "Move left")
-    tbi.bind_key(wname, tbi.KEY_RIGHT_ARROW,  M.right, "Move right")
-    tbi.bind_key(wname, tbi.KEY_DELETE,       M.delete, "Delete character")
+    tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,      "Move down")
+    tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,        "Move up")
+    tbi.bind_key(wname, tbi.KEY_LEFT_ARROW,   M.left,      "Move left")
+    tbi.bind_key(wname, tbi.KEY_RIGHT_ARROW,  M.right,     "Move right")
+    tbi.bind_key(wname, tbi.KEY_DELETE,       M.delete,    "Delete character")
     tbi.bind_key(wname, tbi.KEY_BACKSPACE,    M.backspace, "Delete previous character")
-    tbi.bind_key(wname, tbi.KEY_CTRL_O,       M.open,  "Open file")
-    tbi.bind_key(wname, tbi.KEY_CTRL_S,       M.save,  "Save file")
+    tbi.bind_key(wname, tbi.KEY_CTRL_O,       M.open,      "Open file")
+    tbi.bind_key(wname, tbi.KEY_CTRL_S,       M.save,      "Save file")
+    tbi.bind_key(wname, tbi.KEY_PAGEUP,       M.pageup,    "Page up")
+    tbi.bind_key(wname, tbi.KEY_PAGEDOWN,     M.pagedown,  "Page down")
+    tbi.bind_key(wname, tbi.KEY_HOME,         M.home,      "Goto 1st line")
+    tbi.bind_key(wname, tbi.KEY_END,          M.endx,      "Goto last line")
   end
 
 return M

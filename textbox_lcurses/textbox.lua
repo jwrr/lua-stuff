@@ -260,6 +260,95 @@ local M = {}
     end
   end
 
+
+  function M.save_file_from_table(filename, lines)
+    filename = filename or M.filename
+    local lines = lines or M.lines
+    local f = io.open(filename, 'w')
+    for _,line in ipairs(lines) do
+      f:write(line .. '\n')
+    end
+    f:close()
+  end
+
+
+  function M.read_file_into_table(t, filename)
+    filename = filename or M.filename
+    t.filename = filename
+    M.dbg.print('filename=' ..  filename)
+
+    local lines = {}
+    for line in io.lines(filename) do
+      table.insert(lines, line)
+    end
+    t.lines = lines
+    t.line_number = 1
+    t.column = 1
+  end
+
+
+  function M.num_usable_lines(wname)
+    local maxy, maxx = M.getmaxyx(wname)
+    return M.max(maxy-2, 0)
+  end
+
+
+  function M.align_screen_lines(t)
+    t.cfg = t.cfg or {}
+    t.cfg.lines_from_top = t.cfg.lines_from_top or 7
+    t.cfg.lines_from_bot = t.cfg.lines_from_bot or 10
+    t.cfg.keep_centered  = t.cfg.keep_centered or false
+
+    t.first_line = t.first_line or 1
+    t.last_line = t.last_line or #t.lines or 0
+
+    local maxy = M.num_usable_lines(t.wname)
+    local delta_from_top = t.line_number - t.first_line
+    t.last_line = M.min(t.first_line + maxy - 1, #t.lines)
+    local delta_from_bot = t.last_line - t.line_number
+    if t.cfg.keep_centered then
+      local half_screen = math.floor(maxy / 2)
+      t.first_line = M.max(t.line_number - half_screen, 1)
+    elseif delta_from_top < t.cfg.lines_from_top then
+      t.first_line = M.max(t.line_number - t.cfg.lines_from_top, 1)
+    elseif delta_from_bot < t.cfg.lines_from_bot then
+      t.actual_lines_from_top = M.max(maxy - t.cfg.lines_from_bot, 0)
+      t.first_line = M.max(t.line_number - t.actual_lines_from_top, 1)
+    end
+    t.last_line = M.min(t.first_line + maxy - 1, #t.lines)
+    if t.last_line == #t.lines then
+      t.first_line = M.max(t.last_line - maxy + 1, 1)
+    end
+    M.dbg.print("lnum="..tostring(t.line_number)..' first='..tostring(t.first_line)..' last='..tostring(last_line))
+  end
+
+
+  function M.print_lines2(t,  no_refresh)
+    M.align_screen_lines(t)
+    no_refresh = no_refresh or false
+    local refresh = not no_refresh
+    local this = M.all_windows[t.wname]
+    local txt_width = this.txt_width - 1
+    this.win:move(0,0)
+    M.dbg.print("in print_lines: t.wname=".. t.wname  .. " first="..tostring(t.first_line)..' last='..tostring(t.last_line))
+    for i=t.first_line,t.last_line do
+      line1 = t.lines[i]
+      local line = M.stringx.rstrip(line1, "\n\r")
+      local has_eol = (line ~= line1)
+      local is_lastline = (i == #t.lines)
+      line = M.stringx.shorten(line, txt_width)
+      if has_eol or not is_lastline then
+        line = line .. "\n"
+      end
+      this.win:addstr(line)
+    end
+    this.win:clrtobot()
+    if refresh then
+      M.refresh(t.wname)
+    end
+  end
+
+  
   function M.print_lines(wname, lines, no_refresh, first_line, last_line)
     no_refresh = no_refresh or false
     first_line = first_line or 1
@@ -333,6 +422,57 @@ local M = {}
     print(debug.traceback(err, 2))
     os.exit(2)
   end
+
+
+
+
+  function M.movey(t, delta_y)
+    delta_y = delta_y or 0
+    local ln1 = t.line_number
+    if delta_y ~= 0 then
+      local ln = t.line_number + delta_y
+      ln = M.max(ln, 1)
+      t.line_number = M.min(ln, #t.lines)
+    end
+    local success = t.line_number ~= ln1
+    return success
+  end
+
+
+  function M.colmax(t, line_number)
+    line_number = line_number or t.line_number
+    return #t.lines[t.line_number] + 1
+  end
+
+
+  function M.movex(t, delta_x)
+    delta_x = delta_x or 0
+    if delta_x == 0 then return  end
+    local col1 = t.column
+    local ln1 = t.line_number
+    local col = M.min(t.column, M.colmax(t))
+    col = col + delta_x
+    if delta_x < 0 then
+      while (col < 1) and t.movey(-1) do
+        col = M.colmax(t) + col -- col is negative
+      end
+    else
+      local colmax = M.colmax(t)
+      while (col > colmax) and t.movey(1) do
+        col = colmax - col
+        colmax = M.colmax(t)
+      end
+    end
+    col = M.max(col, 1)
+    t.column = M.min(col, M.colmax(t))
+    local success = (t.column ~= col1) or (t.line_number ~= ln1)
+    return success
+  end
+  
+  function M.goto_line(t, ln)
+    t.line_number = ln or #t.lines
+  end
+  
 
 return M
 

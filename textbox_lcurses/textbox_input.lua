@@ -23,14 +23,18 @@
 local M = {}
 
   M.KEY_ENTER       =  10
+  M.KEY_CTRL_O      = 15
+  M.KEY_CTRL_S      = 19
   M.KEY_DOWN_ARROW  = 258
   M.KEY_UP_ARROW    = 259
   M.KEY_LEFT_ARROW  = 260
   M.KEY_RIGHT_ARROW = 261
+  M.KEY_HOME        = 262
   M.KEY_BACKSPACE   = 263
   M.KEY_DELETE      = 330
-  M.KEY_CTRL_O      = 15
-  M.KEY_CTRL_S      = 19
+  M.KEY_PAGEDOWN    = 338
+  M.KEY_PAGEUP      = 339
+  M.KEY_END         = 360
 
   M.all_windows = {}
   M.history = {}
