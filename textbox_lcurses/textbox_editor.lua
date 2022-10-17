@@ -44,24 +44,23 @@
   M.cfg.lines_from_top = 7
   M.cfg.lines_from_bot = 10
   M.cfg.keep_centered  = false
+  M.cfg.show_line_numbers = true
 
 
   function M.moveto()
-    tb.moveto(M.wname, M.y, M.x)
+    tb.moveto(M, M.y, M.x)
   end
 
 
   function M.print()
-    tb.print_lines2(M, true)
+    local refresh = false
+    tb.print_lines2(M, refresh)
     M.column = M.column or 1
     M.lines[M.line_number] = M.lines[M.line_number] or ''
-    M.x = tb.min(M.column, #M.lines[M.line_number]+1) - 1
+    M.x = tb.min(M.column-1, #M.lines[M.line_number])
     M.y = M.line_number - M.first_line
-    tb.dbg.print("before moveto: lnum="..tostring(M.line_number)..' first='..tostring(M.first_line)..' last='..tostring(last_line)..' y='..tostring(y))
---    tb.moveto(M.wname, y, x)
-    tb.moveto(M.wname, M.y, M.x)
+    tb.moveto(M, M.y, M.x)
     tb.refresh(M.wname)
-    tb.dbg.print("after refresh")
   end
 
 
@@ -191,11 +190,11 @@
     return tb.goto_line(M, y)
   end
 
-
   M.down       = function() M.movey(1) end
   M.up         = function() M.movey(-1) end
   M.left       = function() M.movex(-1) end
   M.right      = function() M.movex(1) end
+  M.goto_lnum  = function() M.goto_line(42) end
   M.goto_sol   = function() M.column = 1 end
   M.goto_eol   = function() M.column = #M.lines[M.line_number]+1 end 
   M.pagedown   = function() M.movey(tb.num_usable_lines(M.wname)) end
@@ -219,6 +218,7 @@
     tbi.bind_key(wname, keys.RIGHT_ARROW,  M.right,     "Move right")
     tbi.bind_key(wname, keys.DELETE,       M.delete,    "Delete character")
     tbi.bind_key(wname, keys.BACKSPACE,    M.backspace, "Delete previous character")
+    tbi.bind_key(wname, keys.CTRL_G,       M.goto_lnum, "Goto linenumber")
     tbi.bind_key(wname, keys.CTRL_O,       M.open,      "Open file")
     tbi.bind_key(wname, keys.CTRL_S,       M.save,      "Save file")
     tbi.bind_key(wname, keys.PAGEUP,       M.pageup,    "Page up")

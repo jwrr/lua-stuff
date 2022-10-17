@@ -124,8 +124,8 @@ local M = {}
     force = force or false
     if force or tb.active_window == M.wname then
       M.lines = M.read_files_into_lines("..")
-      tb.print_lines2(M, false)
---      tb.print_lines(M.wname, M.lines)
+      local refresh = true
+      tb.print_lines2(M, refresh)
       return true
     else
       return false

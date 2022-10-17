@@ -76,6 +76,11 @@ local M = {}
   end
 
 
+  function M.lpad(str, len)
+    return string.rep(" ", len - #str) .. str
+  end
+  
+
   function M.rpad(str, len)
     return str .. string.rep(" ", len - #str)
   end
@@ -324,19 +329,23 @@ local M = {}
   end
 
 
-  function M.print_lines2(t,  no_refresh)
+  function M.print_lines2(t,  refresh)
     M.align_screen_lines(t)
-    no_refresh = no_refresh or false
-    local refresh = not no_refresh
+    refresh = refresh or false
     local this = M.all_windows[t.wname]
     local txt_width = this.txt_width - 1
     this.win:move(0,0)
-    M.dbg.print("in print_lines: t.wname=".. t.wname  .. " first="..tostring(t.first_line)..' last='..tostring(t.last_line))
+    local show_line_numbers = t.cfg and t.cfg.show_line_numbers or false
+    local lnum_len = string.len(tostring(last_line)) + 1
+    t.line_number_len = lnum_len + 4
     for i=t.first_line,t.last_line do
       line1 = t.lines[i]
       local line = M.stringx.rstrip(line1, "\n\r")
       local has_eol = (line ~= line1)
       local is_lastline = (i == #t.lines)
+      if show_line_numbers then
+        line = '  ' .. M.lpad(tostring(i), lnum_len) .. '  ' .. line
+      end
       line = M.stringx.shorten(line, txt_width)
       if has_eol or not is_lastline then
         line = line .. "\n"
@@ -377,10 +386,10 @@ local M = {}
   end
   
   
-  function M.moveto(name, y, x)
-    local this = M.all_windows[name]
-    M.dbg.print("in moveto. "..name.. " y="..tostring(y)..' x='..tostring(x))
-    this.win:move(y, x)
+  function M.moveto(t, y, x)
+    local this = M.all_windows[t.wname]
+    local ln_len = t.line_number_len or 0
+    this.win:move(y, x + ln_len)
   end
 
 

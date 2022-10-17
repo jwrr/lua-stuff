@@ -22,9 +22,11 @@
 
 local M = {}
 
+  M.CTRL_G      =   7
+  M.CTRL_J      =  10
   M.ENTER       =  10
-  M.CTRL_O      = 15
-  M.CTRL_S      = 19
+  M.CTRL_O      =  15
+  M.CTRL_S      =  19
   M.DOWN_ARROW  = 258
   M.UP_ARROW    = 259
   M.LEFT_ARROW  = 260
