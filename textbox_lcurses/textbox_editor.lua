@@ -206,12 +206,16 @@
   M.backspace  = function() if M.movex(-1) then M.delete_char(1) end end
   M.open       = function() M.open_file() end
   M.save       = function() tb.save_file_from_table() end
+  M.show_line_numbers = function() M.cfg.show_line_numbers = true end
+  M.hide_line_numbers = function() M.cfg.show_line_numbers = false end
 
   function M.register_functions(wname)
     local tbi = tb.input
     local keys = tb.keys
     tbi.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
     tbi.bind_seq(wname, 'quit',  M.quit, "Quit")
+    tbi.bind_seq(wname, 'ln',    M.show_line_numbers,   "Show line numbers")
+    tbi.bind_seq(wname, 'LN',    M.hide_line_numbers,   "Hide line numbers")
     tbi.bind_key(wname, keys.DOWN_ARROW,   M.down,      "Move down")
     tbi.bind_key(wname, keys.UP_ARROW,     M.up,        "Move up")
     tbi.bind_key(wname, keys.LEFT_ARROW,   M.left,      "Move left")
