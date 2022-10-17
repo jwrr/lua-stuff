@@ -32,6 +32,7 @@ local M = {}
   M.input.init(M)
   M.color   = require'textbox_color'
   M.color.init(M)
+  M.keys   = require'textbox_keys'
   
   M.all_windows = {}
   M.active_window = ''

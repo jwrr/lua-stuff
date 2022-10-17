@@ -196,6 +196,8 @@
   M.up         = function() M.movey(-1) end
   M.left       = function() M.movex(-1) end
   M.right      = function() M.movex(1) end
+  M.goto_sol   = function() M.column = 1 end
+  M.goto_eol   = function() M.column = #M.lines[M.line_number]+1 end 
   M.pagedown   = function() M.movey(tb.num_usable_lines(M.wname)) end
   M.pageup     = function() M.movey(-1*tb.num_usable_lines(M.wname)) end
   M.home       = function() M.goto_line(1) end
@@ -208,20 +210,23 @@
 
   function M.register_functions(wname)
     local tbi = tb.input
+    local keys = tb.keys
     tbi.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
     tbi.bind_seq(wname, 'quit',  M.quit, "Quit")
-    tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,      "Move down")
-    tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,        "Move up")
-    tbi.bind_key(wname, tbi.KEY_LEFT_ARROW,   M.left,      "Move left")
-    tbi.bind_key(wname, tbi.KEY_RIGHT_ARROW,  M.right,     "Move right")
-    tbi.bind_key(wname, tbi.KEY_DELETE,       M.delete,    "Delete character")
-    tbi.bind_key(wname, tbi.KEY_BACKSPACE,    M.backspace, "Delete previous character")
-    tbi.bind_key(wname, tbi.KEY_CTRL_O,       M.open,      "Open file")
-    tbi.bind_key(wname, tbi.KEY_CTRL_S,       M.save,      "Save file")
-    tbi.bind_key(wname, tbi.KEY_PAGEUP,       M.pageup,    "Page up")
-    tbi.bind_key(wname, tbi.KEY_PAGEDOWN,     M.pagedown,  "Page down")
-    tbi.bind_key(wname, tbi.KEY_HOME,         M.home,      "Goto 1st line")
-    tbi.bind_key(wname, tbi.KEY_END,          M.endx,      "Goto last line")
+    tbi.bind_key(wname, keys.DOWN_ARROW,   M.down,      "Move down")
+    tbi.bind_key(wname, keys.UP_ARROW,     M.up,        "Move up")
+    tbi.bind_key(wname, keys.LEFT_ARROW,   M.left,      "Move left")
+    tbi.bind_key(wname, keys.RIGHT_ARROW,  M.right,     "Move right")
+    tbi.bind_key(wname, keys.DELETE,       M.delete,    "Delete character")
+    tbi.bind_key(wname, keys.BACKSPACE,    M.backspace, "Delete previous character")
+    tbi.bind_key(wname, keys.CTRL_O,       M.open,      "Open file")
+    tbi.bind_key(wname, keys.CTRL_S,       M.save,      "Save file")
+    tbi.bind_key(wname, keys.PAGEUP,       M.pageup,    "Page up")
+    tbi.bind_key(wname, keys.PAGEDOWN,     M.pagedown,  "Page down")
+    tbi.bind_key(wname, keys.HOME,         M.goto_sol,  "Goto start of line")
+    tbi.bind_key(wname, keys.END,          M.goto_eol,  "Goto end of line")
+    tbi.bind_key(wname, keys.CTRL_HOME,    M.home,      "Goto 1st line")
+    tbi.bind_key(wname, keys.CTRL_END,     M.endx,      "Goto last line")
   end
 
 return M

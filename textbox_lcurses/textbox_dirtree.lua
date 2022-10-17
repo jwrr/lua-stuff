@@ -173,13 +173,13 @@ local M = {}
 --   end
 --
 --   function M.register_functions(wname)
---     local tbi = tb.input
---     tbi.bind_seq(wname, 'open',               M.open, "Open selected file")
---     tbi.bind_seq(wname, 'down',               M.down, "Scroll up to previous file")
---     tbi.bind_seq(wname, 'up',                 M.up,   "Scroll up to previous file")
---     tbi.bind_key(wname, tbi.KEY_ENTER,        M.open,  "Select file and open")
---     tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,  "Move down")
---     tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,    "Move up")
+--     local keys = tb.keys
+--     tb.input.bind_seq(wname, 'open',               M.open, "Open selected file")
+--     tb.input.bind_seq(wname, 'down',               M.down, "Scroll up to previous file")
+--     tb.input.bind_seq(wname, 'up',                 M.up,   "Scroll up to previous file")
+--     tb.input.bind_key(wname, keys.ENTER,        M.open,  "Select file and open")
+--     tb.input.bind_key(wname, keys.DOWN_ARROW,   M.down,  "Move down")
+--     tb.input.bind_key(wname, keys.UP_ARROW,     M.up,    "Move up")
 --   end
 --
 
@@ -212,24 +212,25 @@ local M = {}
   M.save       = function() tb.save_file_from_table() end
 
   function M.register_functions(wname)
-    local tbi = tb.input
-    tbi.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
-    tbi.bind_seq(wname, 'quit',  M.quit, "Quit")
-    tbi.bind_key(wname, tbi.KEY_DOWN_ARROW,   M.down,      "Move down")
-    tbi.bind_key(wname, tbi.KEY_UP_ARROW,     M.up,        "Move up")
-    tbi.bind_key(wname, tbi.KEY_PAGEUP,       M.pageup,    "Page up")
-    tbi.bind_key(wname, tbi.KEY_PAGEDOWN,     M.pagedown,  "Page down")
-    tbi.bind_key(wname, tbi.KEY_HOME,         M.home,      "Goto 1st line")
-    tbi.bind_key(wname, tbi.KEY_END,          M.endx,      "Goto last line")
+    local keys = tb.keys
+    tb.input.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
+    tb.input.bind_seq(wname, 'quit',  M.quit, "Quit")
+    tb.input.bind_key(wname, keys.DOWN_ARROW,   M.down,      "Move down")
+    tb.input.bind_key(wname, keys.UP_ARROW,     M.up,        "Move up")
+    tb.input.bind_key(wname, keys.PAGEUP,       M.pageup,    "Page up")
+    tb.input.bind_key(wname, keys.PAGEDOWN,     M.pagedown,  "Page down")
+    tb.input.bind_key(wname, keys.HOME,         M.home,      "Goto 1st line")
+    tb.input.bind_key(wname, keys.END,          M.endx,      "Goto last line")
+    tb.input.bind_key(wname, keys.CTRL_HOME,    M.home,      "Goto 1st line")
+    tb.input.bind_key(wname, keys.CTRL_END,     M.endx,      "Goto last line")
+    tb.input.bind_key(wname, keys.CTRL_O,       M.open,      "Open file")
+    tb.input.bind_key(wname, keys.ENTER,        M.open,      "Select file and open")
 
-    tbi.bind_key(wname, tbi.KEY_CTRL_O,       M.open,      "Open file")
-    tbi.bind_key(wname, tbi.KEY_ENTER,        M.open,  "Select file and open")
-
--- --     tbi.bind_key(wname, tbi.KEY_LEFT_ARROW,   M.left,      "Move left")
---     tbi.bind_key(wname, tbi.KEY_RIGHT_ARROW,  M.right,     "Move right")
---     tbi.bind_key(wname, tbi.KEY_DELETE,       M.delete,    "Delete character")
---     tbi.bind_key(wname, tbi.KEY_BACKSPACE,    M.backspace, "Delete previous character")
---     tbi.bind_key(wname, tbi.KEY_CTRL_S,       M.save,      "Save file")
+-- --     tb.input.bind_key(wname, keys.LEFT_ARROW,   M.left,      "Move left")
+--     tb.input.bind_key(wname, keys.RIGHT_ARROW,  M.right,     "Move right")
+--     tb.input.bind_key(wname, keys.DELETE,       M.delete,    "Delete character")
+--     tb.input.bind_key(wname, keys.BACKSPACE,    M.backspace, "Delete previous character")
+--     tb.input.bind_key(wname, keys.CTRL_S,       M.save,      "Save file")
 
   end
 
