@@ -47,7 +47,7 @@ local M = {}
 
   function M.ide()
     M.init_screen()
-    while editor.getchar() do
+    while editor.on_keypress() do
       M.update_screen(true)
     end
   end

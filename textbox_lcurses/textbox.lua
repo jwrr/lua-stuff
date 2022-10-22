@@ -76,18 +76,47 @@ local M = {}
   end
 
 
-  function M.lpad(str, len)
-    return string.rep(" ", len - #str) .. str
+  function M.lpad(s, len)
+    return string.rep(" ", len - #s) .. s
   end
   
 
-  function M.rpad(str, len)
-    return str .. string.rep(" ", len - #str)
+  function M.rpad(s, len)
+    return s .. string.rep(" ", len - #s)
+  end
+
+  
+  function M.ltrim(s)
+    return string.gsub(s, '^%s*', '')
+  end
+
+
+  function M.rtrim(s)
+    return string.gsub(s, '%s*$', '')
   end
   
+  
+  function M.get_whitespace(s)
+    if s and #s > 0 then
+      return string.match(s, '^(%s*)') or ''
+    end
+    return ''
+  end
 
-  function M.replace_char(pos, str, ch)
-    return str:sub(1, pos-1) .. ch .. str:sub(pos+1)
+
+  function M.starts_with(haystack, needle)
+    if haystack and #haystack > 0 then
+      if not string.find(needle, '^', 1, true) then
+        needle = '^' .. needle
+      end
+      return not (string.match(haystack, needle) == nil)
+    end
+    return false
+  end
+
+
+  function M.replace_char(pos, s, ch)
+    return string.sub(s, 1, pos-1) .. ch .. string.sub(s, pos+1)
   end
 
 
@@ -393,8 +422,8 @@ local M = {}
   end
 
 
-  function M.print(name, str, action)
-    M.print_lines(name, M.stringx.splitlines(str, true), action)
+  function M.print(name, s, action)
+    M.print_lines(name, M.stringx.splitlines(s, true), action)
   end
 
 

@@ -39,13 +39,15 @@
   M.last_line = 0
   M.insert_mode = true -- overwrite = false
   M.filename = "text.txt"
+  M.comment = '#'
   
   M.cfg = {}
   M.cfg.lines_from_top = 7
   M.cfg.lines_from_bot = 10
   M.cfg.keep_centered  = false
   M.cfg.show_line_numbers = true
-
+  M.cfg.auto_indent = true
+  M.cfg.auto_comment = true
 
   function M.moveto()
     tb.moveto(M, M.y, M.x)
@@ -78,6 +80,38 @@
   end
 
 
+  function M.auto_comment()
+    if M.cfg.auto_comment then
+      local prev_is_comment = tb.starts_with(M.lines[M.line_number-1], '%s*' ..  M.comment)
+      local prev_prev_is_comment = tb.starts_with(M.lines[M.line_number-2], '%s*' ..  M.comment)
+      local next_is_comment = tb.starts_with(M.lines[M.line_number+1], '%s*' ..  M.comment)
+      if prev_is_comment then
+        if prev_prev_is_comment or next_is_comment then
+          local prev_line = M.lines[M.line_number-1] or ''
+          local comment = string.match(prev_line, '^(%s*' .. M.comment .. '%s*)') or ''
+          M.lines[M.line_number] = comment
+          M.column = #comment + 1
+          return true
+        end
+      end
+    end
+    return false
+  end
+
+
+  function M.auto_indent()
+    if M.cfg.auto_indent then
+      local leading_whitespace = tb.get_whitespace(M.lines[M.line_number-1])
+      if leading_whitespace then
+        M.lines[M.line_number] = leading_whitespace
+        M.column = #leading_whitespace + 1
+        return true
+      end
+    end
+    return false
+  end
+
+
   function M.insert(str)
     local str2 = M.trim_cr(str)
     local new_str_ends_with_cr = #str2 ~= #str
@@ -91,6 +125,9 @@
       M.line_number = M.line_number + 1
       table.insert(M.lines, M.line_number, line:sub(M.column))
       M.column = 1
+      if not M.auto_comment() then
+        M.auto_indent()
+      end
     end
   end
 
@@ -139,7 +176,7 @@
   end
 
 
-  function M.getchar()
+  function M.on_keypress()
     local is_text = tb.input.getch()
     if is_text then
       M.enter_text()
@@ -214,6 +251,7 @@
     local keys = tb.keys
     tbi.bind_seq(wname, 'open',  M.open_file, "Open file for editing")
     tbi.bind_seq(wname, 'quit',  M.quit, "Quit")
+    tbi.bind_seq(wname, 'jj',    M.join_lines,          "Join lines")
     tbi.bind_seq(wname, 'ln',    M.show_line_numbers,   "Show line numbers")
     tbi.bind_seq(wname, 'LN',    M.hide_line_numbers,   "Hide line numbers")
     tbi.bind_key(wname, keys.DOWN_ARROW,   M.down,      "Move down")
