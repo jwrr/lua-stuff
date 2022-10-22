@@ -269,6 +269,8 @@ local M = {}
     return maxy, maxx
   end
 
+  M.color_normal   = M.color.white_on_black
+  M.color_selected = M.color.black_on_white
 
   function M.refresh(name)
     local this = M.all_windows[name]
@@ -334,27 +336,27 @@ local M = {}
     t.cfg.lines_from_bot = t.cfg.lines_from_bot or 10
     t.cfg.keep_centered  = t.cfg.keep_centered or false
 
-    t.first_line = t.first_line or 1
-    t.last_line = t.last_line or #t.lines or 0
+    t.screen_first_line = t.screen_first_line or 1
+    t.screen_last_line = t.screen_last_line or #t.lines or 0
 
     local maxy = M.num_usable_lines(t.wname)
-    local delta_from_top = t.line_number - t.first_line
-    t.last_line = M.min(t.first_line + maxy - 1, #t.lines)
-    local delta_from_bot = t.last_line - t.line_number
+    local delta_from_top = t.line_number - t.screen_first_line
+    t.screen_last_line = M.min(t.screen_first_line + maxy - 1, #t.lines)
+    local delta_from_bot = t.screen_last_line - t.line_number
     if t.cfg.keep_centered then
       local half_screen = math.floor(maxy / 2)
-      t.first_line = M.max(t.line_number - half_screen, 1)
+      t.screen_first_line = M.max(t.line_number - half_screen, 1)
     elseif delta_from_top < t.cfg.lines_from_top then
-      t.first_line = M.max(t.line_number - t.cfg.lines_from_top, 1)
+      t.screen_first_line = M.max(t.line_number - t.cfg.lines_from_top, 1)
     elseif delta_from_bot < t.cfg.lines_from_bot then
       t.actual_lines_from_top = M.max(maxy - t.cfg.lines_from_bot, 0)
-      t.first_line = M.max(t.line_number - t.actual_lines_from_top, 1)
+      t.screen_first_line = M.max(t.line_number - t.actual_lines_from_top, 1)
     end
-    t.last_line = M.min(t.first_line + maxy - 1, #t.lines)
-    if t.last_line == #t.lines then
-      t.first_line = M.max(t.last_line - maxy + 1, 1)
+    t.screen_last_line = M.min(t.screen_first_line + maxy - 1, #t.lines)
+    if t.screen_last_line == #t.lines then
+      t.screen_first_line = M.max(t.screen_last_line - maxy + 1, 1)
     end
-    M.dbg.print("lnum="..tostring(t.line_number)..' first='..tostring(t.first_line)..' last='..tostring(last_line))
+    M.dbg.print("lnum="..tostring(t.line_number)..' first='..tostring(t.screen_first_line)..' last='..tostring(screen_last_line))
   end
 
 
@@ -365,21 +367,38 @@ local M = {}
     local txt_width = this.txt_width - 1
     this.win:move(0,0)
     local show_line_numbers = t.cfg and t.cfg.show_line_numbers or false
-    local lnum_len = string.len(tostring(last_line)) + 1
+    local lnum_len = string.len(tostring(screen_last_line)) + 1
     t.line_number_len = lnum_len + 4
-    for i=t.first_line,t.last_line do
+
+    t.select_first_line = t.select_first_line or 0
+    t.select_last_line = t.select_last_line or 0
+
+    M.dbg.print("line2"..tostring(t.select_first_line)..' '..tostring(t.select_last_line))
+    for i=t.screen_first_line,t.screen_last_line do
       line1 = t.lines[i]
       local line = M.stringx.rstrip(line1, "\n\r")
       local has_eol = (line ~= line1)
       local is_lastline = (i == #t.lines)
       if show_line_numbers then
-        line = '  ' .. M.lpad(tostring(i), lnum_len) .. '  ' .. line
+        this.win:addstr('  ' .. M.lpad(tostring(i), lnum_len) .. '  ')
       end
-      line = M.stringx.shorten(line, txt_width)
-      if has_eol or not is_lastline then
-        line = line .. "\n"
+      line = M.stringx.shorten(line, txt_width-t.line_number_len)
+      
+      local line_is_selected = (t.select_first_line <= i) and (i <= t.select_last_line)
+      if line_is_selected then
+        local color = t.cfg.color_selected or M.color_selected or M.color.black_on_white
+        M.color.set_color_pair(t.wname, color)
+        M.dbg.print("is_selected: line="..tostring(i).." color="..tostring(color).." wname="..t.wname)
       end
       this.win:addstr(line)
+      if line_is_selected then
+        local color = t.cfg.color_normal or M.color_normal or M.color.white_on_black
+        M.color.set_color_pair(t.wname, color)
+        M.dbg.print("is_selectedxx: line="..tostring(i).." color="..tostring(color).." wname="..t.wname)
+      end
+      if has_eol or not is_lastline then
+        this.win:addstr("\n")
+      end
     end
     this.win:clrtobot()
     if refresh then
@@ -388,16 +407,16 @@ local M = {}
   end
 
   
-  function M.print_lines(wname, lines, no_refresh, first_line, last_line)
+  function M.print_lines(wname, lines, no_refresh, screen_first_line, screen_last_line)
     no_refresh = no_refresh or false
-    first_line = first_line or 1
-    last_line = last_line or #lines or 0
+    screen_first_line = screen_first_line or 1
+    screen_last_line = screen_last_line or #lines or 0
     local refresh = not no_refresh
     local this = M.all_windows[wname]
     local txt_width = this.txt_width - 1
     this.win:move(0,0)
-    M.dbg.print("in print_lines: wname=".. wname  .. " first="..tostring(first_line)..' last='..tostring(last_line))
-    for i=first_line,last_line do
+    M.dbg.print("in print_lines: wname=".. wname  .. " first="..tostring(screen_first_line)..' last='..tostring(screen_last_line))
+    for i=screen_first_line,screen_last_line do
       line1 = lines[i]
       local line = M.stringx.rstrip(line1, "\n\r")
       local has_eol = (line ~= line1)

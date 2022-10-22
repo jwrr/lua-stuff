@@ -39,8 +39,8 @@ local M = {}
   end
 
 
-  function M.set_color_pair(name, color_pair)
-    M.tb.all_windows[name].win:attron(curses.color_pair(color_pair))
+  function M.set_color_pair(wname, color_pair)
+    M.tb.all_windows[wname].win:attron(curses.color_pair(color_pair))
   end
 
 
