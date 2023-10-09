@@ -1,33 +1,31 @@
 
-local coroutine_table = {}
+local co_table = {}
 for i=1,10 do
   print("Creating coroutine: ", i)
-  coroutine_table[i] = coroutine.create(function()
-    print("in co1 1")
-    coroutine.yield()
-    print("in co1 2")
-    coroutine.yield()
-    print("in co1 3")
-    coroutine.yield()
-    print("in co1 4")
+  co_table[i] = coroutine.create(function(id)
+    for i=1,4 do
+      print("in coroutine", id, i)
+      coroutine.yield()
+    end
   end)
 end
 
 
+function all_dead(co_table)
+  local dead_count = 0
+  for i=1,#co_table do
+    if coroutine.status(co_table[i]) == "dead" then
+      dead_count = dead_count + 1
+    end
+  end
+  return dead_count == #co_table
+end
 
 
-print("in main 1")
-for i=1,10 do coroutine.resume(coroutine_table[i]) end
-print("in main 2")
-for i=1,10 do coroutine.resume(coroutine_table[i]) end
-print("in main 3")
-for i=1,10 do coroutine.resume(coroutine_table[i]) end
-print("in main 4")
-for i=1,10 do coroutine.resume(coroutine_table[i]) end
-print("in main 5")
-for i=1,10 do coroutine.resume(coroutine_table[i]) end
-print("in main 6")
-for i=1,10 do coroutine.resume(coroutine_table[i]) end
+while not all_dead(co_table) do
+  print("in main")
+  for i=1,#co_table do coroutine.resume(co_table[i], i) end
+end
 print("in main done")
 
 
