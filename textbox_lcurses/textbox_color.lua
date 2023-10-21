@@ -71,7 +71,7 @@ local M = {}
     M.htmlcolor(curses.COLOR_BLUE,    0x5555ff)
     M.htmlcolor(curses.COLOR_MAGENTA, 0xdd00dd)
     M.htmlcolor(curses.COLOR_CYAN,    0x008888)
-    M.htmlcolor(curses.COLOR_WHITE,   0xcccccc)
+    M.htmlcolor(curses.COLOR_WHITE,   0xffffff)
 
     curses.init_pair(M.black_on_black,   curses.COLOR_BLACK,   curses.COLOR_BLACK)
     curses.init_pair(M.red_on_black,     curses.COLOR_RED,     curses.COLOR_BLACK)
