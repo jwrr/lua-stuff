@@ -39,7 +39,6 @@ co_t.u_testbench = {
         pslverr     = pslverr
       },
       co = coroutine.create(function(io)
-        print("In u_apb_ram");
         local IO = io
         local apb_write = {cur=0}
         local apb_addr = {cur=0}
